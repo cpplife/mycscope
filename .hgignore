@@ -5,4 +5,5 @@ syntax:glob
 config.log
 egrep.c
 fscanner.c
+cscope.out
 

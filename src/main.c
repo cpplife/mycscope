@@ -333,7 +333,11 @@ cscope: reffile too long, cannot be > %d characters\n", sizeof(path) - 1);
     shell = mygetenv("SHELL", SHELL);
     lineflag = mygetenv("CSCOPE_LINEFLAG", LINEFLAG);
     lineflagafterfile = getenv("CSCOPE_LINEFLAG_AFTER_FILE") ? 1 : 0;
+#ifdef __MSDOS__
+    tmpdir = mygetenv("TMP", TMPDIR);
+#else
     tmpdir = mygetenv("TMPDIR", TMPDIR);
+#endif
 
     /* XXX remove if/when clearerr() in dir.c does the right thing. */
     if (namefile && strcmp(namefile, "-") == 0 && !buildonly) {
