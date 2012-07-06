@@ -1,2 +1,8 @@
 syntax:glob
 *.o
+*.exe
+.deps
+config.log
+egrep.c
+fscanner.c
+
