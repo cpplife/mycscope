@@ -38,7 +38,7 @@ build_triplet = i686-pc-mingw32
 host_triplet = i686-pc-mingw32
 LIBOBJDIR =
 #EXTRA_PROGRAMS = gscope$(EXEEXT)
-bin_PROGRAMS = cscope$(EXEEXT)
+bin_PROGRAMS = mycscope$(EXEEXT)
 subdir = src
 DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in egrep.c \
 	fscanner.c scanner.c snprintf.c
@@ -306,8 +306,8 @@ uninstall-binPROGRAMS:
 
 clean-binPROGRAMS:
 	-test -z "$(bin_PROGRAMS)" || rm -f $(bin_PROGRAMS)
-cscope$(EXEEXT): $(cscope_OBJECTS) $(cscope_DEPENDENCIES) 
-	@rm -f cscope$(EXEEXT)
+mycscope$(EXEEXT): $(cscope_OBJECTS) $(cscope_DEPENDENCIES) 
+	@rm -f mycscope$(EXEEXT)
 	$(LINK) $(cscope_LDFLAGS) $(cscope_OBJECTS) $(cscope_LDADD) $(LIBS)
 gscope$(EXEEXT): $(gscope_OBJECTS) $(gscope_DEPENDENCIES) 
 	@rm -f gscope$(EXEEXT)

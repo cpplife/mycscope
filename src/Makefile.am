@@ -11,7 +11,7 @@ endif
 
 EXTRA_PROGRAMS = gscope
 endif
-bin_PROGRAMS = cscope
+bin_PROGRAMS = mycscope
 
 if USING_LEX
 LEXER_SOURCE=scanner.l
