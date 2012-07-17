@@ -1,7 +1,6 @@
 #! /bin/sh
 
-export CURSES_LIBS=-lpdcurses
 export LIBS=-lrxspencer
 export LDFLAGS=-static
-sh configure
+./configure  CURSES_LIBS=-lpdcurses
 
