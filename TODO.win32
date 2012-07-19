@@ -1,0 +1,2 @@
+* Replace external sort with internal function.
+* Speedup updating of cscope db
