@@ -3,6 +3,10 @@ syntax:glob
 *.exe
 .deps
 config.log
+config.h
+config.status
+Makefile
+stamp-h1
 egrep.c
 fscanner.c
 cscope.out
