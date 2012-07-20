@@ -36,7 +36,7 @@
 #define HAVE_IO_H 1
 
 /* Define to 1 if you have the `regex' library (-lregex). */
-#define HAVE_LIBREGEX 1
+/* #undef HAVE_LIBREGEX */
 
 /* Define to 1 if you have the `localeconv' function. */
 /* #undef HAVE_LOCALECONV */

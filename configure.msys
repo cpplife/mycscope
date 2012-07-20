@@ -2,5 +2,5 @@
 
 export LIBS=-lrxspencer
 export LDFLAGS=-static
-./configure  CURSES_LIBS=-lpdcurses
+./configure
 
