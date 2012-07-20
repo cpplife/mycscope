@@ -1,0 +1,4 @@
+#! /bin/sh
+
+make CURSES_LIBS=-lpdcurses
+
