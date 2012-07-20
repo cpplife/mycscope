@@ -1,2 +1,13 @@
+TODO:
+
 * Replace external sort with internal function.
+* support C++ better.
+
+
+
+
+FINISHED:
+
 * Speedup updating of cscope db
+    note: after using -q option when building cscope db, the search speed for me is enough...
+ 

@@ -1,10 +1,8 @@
 1. Install MinGW and MSYS;
 2. Install mingw-ibpdcurses and msys-libregex;
 3. copy msys-libregex into MinGW directory;
-4. Add "#define __MSDOS__ " and "#define __DJGPP__" into config.h.in;
-5. in MSYS shell, run ./configure
-- 6. change "CURSES_LIBS = -lcurses" to "CURSES_LIBS = -lpdcurses" in *all* Makefiles
-+ 6 use command "make CURSES_LIBS=-lpdcurses" to make project
+4. Add "#define __MSDOS__ " and "#define __DJGPP__" and "#define TCC "into config.h.in;
+5. in MSYS shell, run ./configure.msys and ./make.msys
 
 
 
