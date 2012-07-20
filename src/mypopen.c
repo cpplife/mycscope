@@ -34,7 +34,9 @@
 #include <signal.h>
 #include <unistd.h>
 #include <sys/types.h>
-/*#include <sys/wait.h>*/
+#if defined(__MSDOS__) && defined(TCC)
+#include <sys/wait.h>
+#endif
 #include "global.h"	/* pid_t, RETSIGTYPE, shell, and mybasename() */
 
 #define	tst(a,b) (*mode == 'r'? (b) : (a))
@@ -81,8 +83,11 @@ myopen(char *path, int flag, int mode)
     if(fd != -1)
 	return(fd);
 #endif
-    /*if(fd != -1 && (fcntl(fd, F_SETFD, CLOSE_ON_EXEC) != -1))*/
+#if !defined(__MSDOS__) && !defined(TCC)
+    if(fd != -1 && (fcntl(fd, F_SETFD, CLOSE_ON_EXEC) != -1))
+#else
     if(fd != -1)
+#endif
 	return(fd);
 
     else

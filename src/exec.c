@@ -38,7 +38,9 @@
 #include <unistd.h>
 #include "global.h"
 #include <stdarg.h>
-/*#include <sys/wait.h> */
+#if !defined(__MSDOS__) && !defined(TCC)
+#include <sys/wait.h>
+#endif
 #include <sys/types.h>      /* pid_t */
 #ifdef __DJGPP__
 #include <process.h>
