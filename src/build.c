@@ -457,7 +457,7 @@ cscope: converting to new symbol database file format\n");
 	fstat(fileno(postings), &statstruct);
 	fclose(postings);
 #if defined(__MSDOS__) && defined(TCC)
-	snprintf(sortcommand, sizeof(sortcommand), "env LC_ALL=C gnusort -T %s %s", tmpdir, temp1);
+	snprintf(sortcommand, sizeof(sortcommand), "set LC_ALL=C & gnusort -T %s %s", tmpdir, temp1);
 #else
 	snprintf(sortcommand, sizeof(sortcommand), "env LC_ALL=C sort -T %s %s", tmpdir, temp1);
 #endif
