@@ -1,0 +1,8 @@
+include/rxspencer/regex.h
+lib/librxspencer-bcc.lib
+lib/librxspencer.a
+lib/librxspencer.dll.a
+lib/librxspencer.lib
+lib/rxspencer.def
+manifest/regex-spencer-3.8.g.3-lib.mft
+manifest/regex-spencer-3.8.g.3-lib.ver

@@ -1,3 +1,15 @@
+==
+Update 20140713:
+1. Install MinGw and MSYS, make sure bison (or flex and yacc) installed;
+2. Install mingw-libpdcurses;
+2. Copy 3rd include dir and lib dir into MinGW include and lib paths;
+5. in MSYS shell, run ./configure.msys and ./make.msys
+
+
+
+==
+Old:
+
 1. Install MinGW and MSYS;
 2. Install mingw-ibpdcurses and msys-libregex;
 3. copy msys-libregex into MinGW directory;

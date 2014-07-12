@@ -1,0 +1,6 @@
+EXPORTS
+    DllGetVersion @1
+    regcomp @2
+    regerror @3
+    regexec @4
+    regfree @5
