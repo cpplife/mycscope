@@ -114,5 +114,8 @@ int	invforward(INVCONTROL *invcntl);
 int	invopen(INVCONTROL *invcntl, char *invname, char *invpost, int status);
 long	invmake(char *invname, char *invpost, FILE *infile);
 long	invterm(INVCONTROL *invcntl, char *term);
+#if defined(__MSDOS__) && defined(TCC)
+long	invmake_in_mem(char *invname, char *invpost, char *inbuffer);
+#endif
 
 #endif /* CSCOPE_INVLIB_H */

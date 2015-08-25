@@ -45,6 +45,9 @@
 #include "scanner.h"
 #include "version.h"		/* for FILEVERSION */
 #include "vp.h"
+#if defined( __MSDOS__ ) && defined( TCC )
+#include "sort.h"
+#endif
 
 #if defined(USE_NCURSES) && !defined(RENAMED_NCURSES)
 #include <ncurses.h>
@@ -447,35 +450,40 @@ cscope: converting to new symbol database file format\n");
     }
 
     /* create the inverted index if requested */
-    if (invertedindex == YES) {
-	char	sortcommand[PATHLEN + 1];
+	if (invertedindex == YES) {
+		char	sortcommand[PATHLEN + 1];
+		char	sorttempfile[PATHLEN + 1];
 
-	if (fflush(postings) == EOF) {
-	    cannotwrite(temp1);
-	    /* NOTREACHED */
-	}
-	fstat(fileno(postings), &statstruct);
-	fclose(postings);
+		if (fflush(postings) == EOF) {
+			cannotwrite(temp1);
+			/* NOTREACHED */
+		}
+		fstat(fileno(postings), &statstruct);
+		fclose(postings);
 #if defined(__MSDOS__) && defined(TCC)
-	snprintf(sortcommand, sizeof(sortcommand), "set LC_ALL=C & gnusort -T %s %s", tmpdir, temp1);
+		//snprintf(sortcommand, sizeof(sortcommand), "set LC_ALL=C & gnusort -T %s %s", tmpdir, temp1);
+
+		snprintf(sorttempfile, sizeof(sorttempfile), "%s.sort", temp1);
+		printf("%s\n", sorttempfile);
+		sort(temp1, 1, sorttempfile);
 #else
-	snprintf(sortcommand, sizeof(sortcommand), "env LC_ALL=C sort -T %s %s", tmpdir, temp1);
+		snprintf(sortcommand, sizeof(sortcommand), "env LC_ALL=C sort -T %s %s", tmpdir, temp1);
 #endif
-	if ((postings = mypopen(sortcommand, "r")) == NULL) {
-	    fprintf(stderr, "cscope: cannot open pipe to sort command\n");
-	    cannotindex();
-	} else {
-	    if ((totalterms = invmake(newinvname, newinvpost, postings)) > 0) {
-		movefile(newinvname, invname);
-		movefile(newinvpost, invpost);
-	    } else {
-		cannotindex();
-	    }
-	    mypclose(postings);
+		if ((postings = mypopen(sortcommand, "r")) == NULL) {
+			fprintf(stderr, "cscope: cannot open pipe to sort command\n");
+			cannotindex();
+		} else {
+			if ((totalterms = invmake(newinvname, newinvpost, postings)) > 0) {
+				movefile(newinvname, invname);
+				movefile(newinvpost, invpost);
+			} else {
+				cannotindex();
+			}
+			mypclose(postings);
+		}
+		unlink(temp1);
+		free(srcoffset);
 	}
-	unlink(temp1);
-	free(srcoffset);
-    }
     /* rewrite the header with the trailer offset and final option list */
     rewind(newrefs);
     putheader(newdir);

@@ -347,6 +347,271 @@ invmake(char *invname, char *invpost, FILE *infile)
 	return(totterm);
 }
 
+# if defined( __MSDOS__ ) && defined( TCC )
+
+static char* 
+get_line_in_buffer(char * line, int line_max, char * inbuffer)
+{
+	line[0] = '\0';
+	char * p = inbuffer;
+	while ( 1 ) {
+		if (*p == '\n' || *p == '\0') {
+			strncpy( line, inbuffer, p - inbuffer);
+			return p + 1;
+		}
+		++p;
+	}
+
+	return NULL;
+}
+
+long
+invmake_in_mem(char *invname, char *invpost, char *inbuffer)
+{
+	unsigned char	*s;
+	long	num;
+	int	i;
+	long	fileindex = 0;	/* initialze, to avoid warning */
+	unsigned postsize = POSTINC * sizeof(POSTING);
+	unsigned long	*intptr;
+	char	line[TERMMAX];
+	long	tlong;
+	PARAM	param;
+	POSTING	posting;
+	char 	temp[BLOCKSIZE];
+	char *	buffer;
+#if STATS
+	int	j;
+	unsigned maxtermlen = 0;
+#endif
+	/* output file */
+	if ((outfile = vpfopen(invname, "w+b")) == NULL) {
+		invcannotopen(invname);
+		return(0);
+	}
+	indexfile = invname;
+	fseek(outfile, BUFSIZ, SEEK_SET);
+
+	/* posting file  */
+	if ((fpost = vpfopen(invpost, "wb")) == NULL) {
+		invcannotopen(invpost);
+		return(0);
+	}
+	postingfile = invpost;
+	nextpost = 0;
+	/* get space for the postings list */
+	if ((POST = malloc(postsize)) == NULL) {
+		invcannotalloc(postsize);
+		return(0);
+	}
+	postptr = POST;
+	/* get space for the superfinger (superindex) */
+	if ((SUPFING = malloc(supersize)) == NULL) {
+		invcannotalloc(supersize);
+		return(0);
+	}
+	supfing = SUPFING;
+	/* FIXME HBB: magic number alert (40) */
+	supintsize = supersize / 40;
+	/* also for the superfinger index */
+	if ((SUPINT = malloc(supintsize * sizeof(long))) == NULL) {
+		invcannotalloc(supintsize * sizeof(long));
+		return(0);
+	}
+	supint = SUPINT;
+	supint++; /* leave first term open for a count */
+	/* initialize using an empty term */
+	strcpy(thisterm, "");
+	*supint++ = 0;
+	*supfing++ = ' ';
+	*supfing++ = '\0';
+	nextsupfing = 2;
+#if DEBUG || STATS
+	totpost = 0L;
+#endif
+	totterm = 0L;
+	numpost = 1;
+
+	/* set up as though a block had come and gone, i.e., set up for new block  */
+	/* FIXME HBB: magic number alert (16) */
+	amtused = 16; /* leave no space - init 3 words + one for luck */
+	numinvitems = 0;
+	numlogblk = 0;
+	lastinblk = sizeof(t_logicalblk);
+
+	/* now loop as long as more to read (till eof)  */
+	while (get_line_in_buffer(line, TERMMAX, inbuffer) != NULL) {
+#if DEBUG || STATS
+		++totpost;
+#endif
+		s = strchr(line, SEP);
+		if (s != NULL) {
+			*s = '\0';
+		}
+		else {
+			continue;
+		}
+#if STATS
+		if ((i = strlen(line)) > maxtermlen) {
+			maxtermlen = i;
+		}
+#endif
+#if DEBUG
+		printf("%ld: %s ", totpost, line);
+		fflush(stdout);
+#endif
+		if (strcmp(thisterm, line) == 0) {
+			if (postptr + 10 > POST + postsize / sizeof(POSTING)) {
+				i = postptr - POST;
+				postsize += POSTINC * sizeof(POSTING);
+				if ((POST = realloc(POST, postsize)) == NULL) {
+					invcannotalloc(postsize);
+					return(0);
+				}
+				postptr = i + POST;
+#if DEBUG
+				printf("reallocated post space to %u, totpost=%ld\n",
+				       postsize, totpost);
+#endif
+			}
+			numpost++;
+		} else {
+			/* have a new term */
+			if (!invnewterm()) {
+				return(0);
+			}
+			strcpy(thisterm, line);
+			numpost = 1;
+			postptr = POST;
+			fileindex = 0;
+		}
+		/* get the new posting */
+		num = *++s - '!';
+		i = 1;
+		do {
+			num = BASE * num + *++s - '!';
+		} while (++i < PRECISION);
+		posting.lineoffset = num;
+		while (++fileindex < nsrcfiles && num > srcoffset[fileindex]) {
+			;
+		}
+		posting.fileindex = --fileindex;
+		posting.type = *++s;
+		++s;
+		if (*s != '\n') {
+			num = *++s - '!';
+			while (*++s != '\n') {
+				num = BASE * num + *s - '!';
+			}
+			posting.fcnoffset = num;
+		}
+		else {
+			posting.fcnoffset = 0;
+		}
+		*postptr++ = posting;
+#if DEBUG
+		printf("%ld %ld %ld %ld\n", posting.fileindex,
+		       posting.fcnoffset, posting.lineoffset, posting.type);
+		fflush(stdout);
+#endif
+	}
+	if (!invnewterm()) {
+		return(0);
+	}
+	/* now clean up final block  */
+	logicalblk.invblk[0] = numinvitems;
+	/* loops pointer around to start */
+	logicalblk.invblk[1] = 0;
+	logicalblk.invblk[2] = numlogblk - 1;
+	if (fwrite(&logicalblk, sizeof(t_logicalblk), 1, outfile) == 0) {
+		goto cannotwrite;
+	}
+	numlogblk++;
+	/* write out block to save space. what in it doesn't matter */
+	if (fwrite(&logicalblk, sizeof(t_logicalblk), 1, outfile) == 0) {
+		goto cannotwrite;
+	}
+	/* finish up the super finger */
+	*SUPINT = numlogblk;
+	/* add to the offsets the size of the offset pointers */
+	intptr = (SUPINT + 1);
+	i = (char *)supint - (char *)SUPINT;
+	while (intptr < supint)
+		*intptr++ += i;
+	/* write out the offsets (1 for the N at start) and the super finger */
+	if (fwrite(SUPINT, sizeof(*SUPINT), numlogblk + 1, outfile) == 0 ||
+	    fwrite(SUPFING, 1, supfing - SUPFING, outfile) == 0) {
+		goto cannotwrite;
+	}
+	/* save the size for reference later */
+	nextsupfing = sizeof(long) + sizeof(long) * numlogblk + (supfing - SUPFING);
+	/* make sure the file ends at a logical block boundary.  This is 
+	necessary for invinsert to correctly create extended blocks 
+	 */
+	i = nextsupfing % sizeof(t_logicalblk);
+	/* write out junk to fill log blk */
+	if (fwrite(temp, sizeof(t_logicalblk) - i, 1, outfile) == 0 ||
+	    fflush(outfile) == EOF) {	/* rewind doesn't check for write failure */
+		goto cannotwrite;
+	}
+	/* write the control area */
+	rewind(outfile);
+	param.version = FMTVERSION;
+	param.filestat = 0;
+	param.sizeblk = sizeof(t_logicalblk);
+	param.startbyte = (numlogblk + 1) * sizeof(t_logicalblk) + BUFSIZ;;
+	param.supsize = nextsupfing;
+	param.cntlsize = BUFSIZ;
+	param.share = 0;
+	if (fwrite(&param, sizeof(param), 1, outfile) == 0) {
+		goto cannotwrite;
+	}
+	for (i = 0; i < 10; i++)	/* for future use */
+		if (fwrite(&zerolong, sizeof(zerolong), 1, outfile) == 0) {
+			goto cannotwrite;
+		}
+
+	/* make first block loop backwards to last block */
+	if (fflush(outfile) == EOF) {	/* fseek doesn't check for write failure */
+		goto cannotwrite;
+	}
+	/* get to second word first block */
+	fseek(outfile, BUFSIZ + 2 * sizeof(long), SEEK_SET);
+	tlong = numlogblk - 1;
+	if (fwrite(&tlong, sizeof(tlong), 1, outfile) == 0 ||
+	    fclose(outfile) == EOF) {
+	cannotwrite:
+		invcannotwrite(invname);
+		return(0);
+	}
+	if (fclose(fpost) == EOF) {
+		invcannotwrite(postingfile);
+		return(0);
+	}
+	--totterm;	/* don't count null term */
+#if STATS
+	printf("logical blocks = %d, postings = %ld, terms = %ld, max term length = %d\n",
+	    numlogblk, totpost, totterm, maxtermlen);
+	if (showzipf) {
+		printf("\n*************   ZIPF curve  ****************\n");
+		for (j = ZIPFSIZE; j > 1; j--)
+			if (zipf[j]) 
+				break;
+		for (i = 1; i < j; ++i) {
+			printf("%3d -%6d ", i, zipf[i]);
+			if (i % 6 == 0) putchar('\n');
+		}
+		printf(">%d-%6d\n", ZIPFSIZE, zipf[0]);
+	}
+#endif
+	/* free all malloc'd memory */
+	free(POST);
+	free(SUPFING);
+	free(SUPINT);
+	return(totterm);
+}
+#endif
+
 /* add a term to the data base */
 
 static int
