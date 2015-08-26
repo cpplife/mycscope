@@ -30,6 +30,7 @@
 #include <sys/types.h>
 #include <signal.h>
 #include <stdio.h>
+#include <sys/stat.h>
 /*
 #include "system.h"
 #include "error.h"
@@ -73,11 +74,118 @@ double strtod ();
 #define UCHAR_MAX 255
 #endif
 
+#ifndef CHAR_MIN
+#define CHAR_MIN -127
+#endif
+
 #define UCHAR_LIM (UCHAR_MAX + 1)
 
 #ifndef DEFAULT_TMPDIR
 # define DEFAULT_TMPDIR "/tmp"
 #endif
+
+#ifndef MAX
+# define MAX(a, b) ((a) > (b) ? (a) : (b))
+#endif
+
+#ifndef MIN
+# define MIN(a,b) (((a) < (b)) ? (a) : (b))
+#endif
+
+ /* ISDIGIT differs from ISDIGIT_LOCALE, as follows:
+   - Its arg may be any int or unsigned int; it need not be an unsigned char.
+   - It's guaranteed to evaluate its argument exactly once.
+   - It's typically faster.
+   POSIX says that only '0' through '9' are digits.  Prefer ISDIGIT to
+   ISDIGIT_LOCALE unless it's important to use the locale's definition
+   of `digit' even when the host does not conform to POSIX.  */
+#define ISDIGIT(c) ((unsigned int) (c) - '0' <= 9)
+
+/* Convert a possibly-signed character to an unsigned character.  This is
+   a bit safer than casting to unsigned char, since it catches some type
+   errors that the cast doesn't.  */
+static inline unsigned char to_uchar (char ch) { return ch; }
+
+#define SAME_INODE(Stat_buf_1, Stat_buf_2) \
+  ((Stat_buf_1).st_ino == (Stat_buf_2).st_ino \
+   && (Stat_buf_1).st_dev == (Stat_buf_2).st_dev)
+
+#define STREQ(a, b) (strcmp ((a), (b)) == 0)
+
+#ifndef ATTRIBUTE_NORETURN
+#define ATTRIBUTE_NORETURN
+#endif
+
+#ifndef _
+#define _
+#endif
+
+
+/* These enum values cannot possibly conflict with the option values
+   ordinarily used by commands, including CHAR_MAX + 1, etc.  Avoid
+   CHAR_MIN - 1, as it may equal -1, the getopt end-of-options value.  */
+enum
+{
+  GETOPT_HELP_CHAR = (CHAR_MIN - 2),
+  GETOPT_VERSION_CHAR = (CHAR_MIN - 3)
+};
+
+#define GETOPT_HELP_OPTION_DECL \
+  "help", no_argument, 0, GETOPT_HELP_CHAR
+#define GETOPT_VERSION_OPTION_DECL \
+  "version", no_argument, 0, GETOPT_VERSION_CHAR
+
+#define case_GETOPT_HELP_CHAR			\
+  case GETOPT_HELP_CHAR:			\
+    usage (EXIT_SUCCESS);			\
+    break; 
+
+
+#ifndef HELP_OPTION_DESCRIPTION
+#define HELP_OPTION_DESCRIPTION \
+  _("      --help     display this help and exit\n")
+#endif
+
+#ifndef VERSION_OPTION_DESCRIPTION
+#define VERSION_OPTION_DESCRIPTION \
+  _("      --version  output version information and exit\n")
+#endif
+
+#ifndef OFFSETOF
+#define OFFSETOF(st, m) ((size_t)(&((st *)0)->m))
+#endif
+
+/* Upper bound on the string length of an integer converted to string.
+   302 / 1000 is ceil (log10 (2.0)).  Subtract 1 for the sign bit;
+   add 1 for integer division truncation; add 1 more for a minus sign.  */
+#define INT_STRLEN_BOUND(t) ((sizeof (t) * CHAR_BIT - 1) * 302 / 1000 + 2)
+
+#define INT_BUFSIZE_BOUND(t) (INT_STRLEN_BOUND (t) + 1)
+
+
+static void error (int __status, int __errnum, const char * message, ...)
+{
+  va_list args;
+  fflush (stdout);
+  va_start (args, message);
+  vfprintf (stderr, message, args);
+  va_end (args);
+  putc ('\n', stderr);
+  fflush (stderr);
+}
+
+static int mymkstemp(char *template)
+{
+    char *temp;
+
+    temp = _mktemp(template);
+    if (!temp)
+        return -1;
+
+    return _open(temp, _O_CREAT | _O_TEMPORARY | _O_EXCL | _O_RDWR, _S_IREAD | _S_IWRITE);
+}
+
+
 
 /* Exit statuses.  */
 enum
@@ -220,7 +328,8 @@ static const size_t LINE_T_SIZE = sizeof( struct line_t );
 /* The number of bytes needed for a merge or check buffer, which can
    function relatively efficiently even if it holds only one line.  If
    a longer line is seen, this value is increased.  */
-static size_t merge_buffer_size = MAX (MIN_MERGE_BUFFER_SIZE, 256 * 1024);
+/* static size_t merge_buffer_size = MAX (MIN_MERGE_BUFFER_SIZE, 256 * 1024); */
+static size_t merge_buffer_size = 256 * 1024;
 
 /* The approximate maximum number of bytes of main memory to use, as
    specified by the user.  Zero if the user has not specified a size.  */
@@ -422,7 +531,7 @@ create_temp_file (FILE **pfp)
   char const *temp_dir = temp_dirs[temp_dir_index];
   size_t len = strlen (temp_dir);
   struct tempnode *node =
-    xmalloc (offsetof (struct tempnode, name) + len + sizeof slashbase);
+    malloc (OFFSETOF (struct tempnode, name) + len + sizeof slashbase);
   char *file = node->name;
 
   memcpy (file, temp_dir, len);
@@ -433,7 +542,7 @@ create_temp_file (FILE **pfp)
 
   /* Create the temporary file in a critical section, to avoid races.  */
   sigprocmask (SIG_BLOCK, &caught_signals, &oldset);
-  fd = mkstemp (file);
+  fd = mymkstemp (file);
   if (0 <= fd)
     {
       *temptail = node;
@@ -463,12 +572,13 @@ xfopen (const char *file, const char *how)
     fp = stdout;
   else if (STREQ (file, "-") && *how == 'r')
     {
-      have_read_stdin = true;
+      have_read_stdin = YES;
       fp = stdin;
     }
   else
     {
-      if ((fp = fopen_safer (file, how)) == NULL)
+      /*if ((fp = fopen_safer (file, how)) == NULL)*/
+      if ((fp = fopen(file, how)) == NULL)
 	die (_("open failed"), file);
     }
 
@@ -511,7 +621,7 @@ static void
 add_temp_dir (char const *dir)
 {
   if (temp_dir_count == temp_dir_alloc)
-    temp_dirs = x2nrealloc (temp_dirs, &temp_dir_alloc, sizeof *temp_dirs);
+    temp_dirs = realloc (temp_dirs, temp_dir_alloc * 2 * sizeof( *temp_dirs ));
 
   temp_dirs[temp_dir_count++] = dir;
 }
@@ -586,7 +696,7 @@ inittables (void)
 
 	  s = (char *) nl_langinfo (ABMON_1 + i);
 	  s_len = strlen (s);
-	  monthtab[i].name = name = xmalloc (s_len + 1);
+	  monthtab[i].name = name = malloc (s_len + 1);
 	  monthtab[i].val = i + 1;
 
 	  for (j = 0; j < s_len; j++)
@@ -599,6 +709,7 @@ inittables (void)
 #endif
 }
 
+#if 0
 /* Specify the amount of main memory to use when sorting.  */
 static void
 specify_sort_size (char const *s)
@@ -659,6 +770,7 @@ specify_sort_size (char const *s)
 
   STRTOL_FATAL_ERROR (s, _("sort size"), e);
 }
+#endif
 
 /* Return the default sort size.  */
 static size_t
@@ -666,9 +778,13 @@ default_sort_size (void)
 {
   /* Let MEM be available memory or 1/8 of total memory, whichever
      is greater.  */
+  /*
   double avail = physmem_available ();
   double total = physmem_total ();
   double mem = MAX (avail, total / 8);
+  */
+  /* set the mem as fixed 128MB size */
+  double mem = 128*1024*1024;
   struct rlimit rlimit;
 
   /* Let SIZE be MEM, but no more than the maximum object size or
@@ -788,13 +904,16 @@ initbuf (struct buffer *buf, size_t line_bytes, size_t alloc)
 	break;
       alloc /= 2;
       if (alloc <= line_bytes + 1)
-	xalloc_die ();
+	  {
+		  error (1, 0, "%s", _("memory exhausted"));
+		  abort ();
+	  }
     }
 
   buf->line_bytes = line_bytes;
   buf->alloc = alloc;
   buf->used = buf->left = buf->nlines = 0;
-  buf->eof = false;
+  buf->eof = NO;
 }
 
 /* Return one past the limit of the line array.  */
@@ -956,7 +1075,7 @@ limfield (const struct line_t *line, const struct keyfield *key)
    of buf->buf to the beginning first.  If EOF is reached and the
    file wasn't terminated by a newline, supply one.  Set up BUF's line
    table too.  FILE is the name of the file corresponding to FP.
-   Return true if some input was read.  */
+   Return YES if some input was read.  */
 
 static BOOL
 fillbuf (struct buffer *buf, register FILE *fp, char const *file)
@@ -967,7 +1086,7 @@ fillbuf (struct buffer *buf, register FILE *fp, char const *file)
   size_t mergesize = merge_buffer_size - MIN_MERGE_BUFFER_SIZE;
 
   if (buf->eof)
-    return false;
+    return NO;
 
   if (buf->used != buf->left)
     {
@@ -1003,9 +1122,9 @@ fillbuf (struct buffer *buf, register FILE *fp, char const *file)
 		die (_("read failed"), file);
 	      if (feof (fp))
 		{
-		  buf->eof = true;
+		  buf->eof = YES;
 		  if (buf->buf == ptrlim)
-		    return false;
+		    return NO;
 		  if (ptrlim[-1] != eol)
 		    *ptrlim++ = eol;
 		}
@@ -1054,12 +1173,12 @@ fillbuf (struct buffer *buf, register FILE *fp, char const *file)
 	{
 	  buf->left = ptr - line_start;
 	  merge_buffer_size = mergesize + MIN_MERGE_BUFFER_SIZE;
-	  return true;
+	  return YES;
 	}
 
       /* The current input line is too long to fit in the buffer.
 	 Double the buffer size and try again.  */
-      buf->buf = x2nrealloc (buf->buf, &buf->alloc, sizeof *(buf->buf));
+      buf->buf = realloc(buf->buf, buf->alloc*2*sizeof( *(buf->buf) ));
     }
 }
 
@@ -1388,7 +1507,7 @@ keycompare (const struct line_t *a, const struct line_t *b)
 	    {
 	      char buf[4000];
 	      size_t size = lena + 1 + lenb + 1;
-	      char *copy_a = (size <= sizeof buf ? buf : xmalloc (size));
+	      char *copy_a = (size <= sizeof buf ? buf : malloc (size));
 	      char *copy_b = copy_a + lena + 1;
 	      size_t new_len_a, new_len_b, i;
 
@@ -1553,8 +1672,8 @@ compare (register const struct line_t *a, register const struct line_t *b)
 
 /* Check that the lines read from FILE_NAME come in order.  Print a
    diagnostic (FILE_NAME, line number, contents of line) to stderr and return
-   false if they are not in order.  Otherwise, print no diagnostic
-   and return true.  */
+   NO if they are not in order.  Otherwise, print no diagnostic
+   and return YES.  */
 
 static BOOL
 check (char const *file_name)
@@ -1566,7 +1685,7 @@ check (char const *file_name)
   uintmax_t line_number = 0;
   struct keyfield const *key = keylist;
   BOOL nonunique = ! unique;
-  BOOL ordered = true;
+  BOOL ordered = YES;
 
   initbuf (&buf, sizeof (struct line_t),
 	   MAX (merge_buffer_size, sort_size));
@@ -1592,7 +1711,7 @@ check (char const *file_name)
 		     umaxtostr (disorder_line_number, hr_buf));
 	    write_bytes (disorder_line->text, disorder_line->length, stderr,
 			 _("standard error"));
-	    ordered = false;
+	    ordered = NO;
 	    break;
 	  }
 	}
@@ -1940,7 +2059,7 @@ avoid_trashing_input (char **files, size_t ntemps, size_t nfiles,
 		      char const *outfile)
 {
   size_t i;
-  BOOL got_outstat = false;
+  BOOL got_outstat = NO;
   struct stat outstat;
 
   for (i = ntemps; i < nfiles; i++)
@@ -1950,7 +2069,7 @@ avoid_trashing_input (char **files, size_t ntemps, size_t nfiles,
       struct stat instat;
 
       if (outfile && STREQ (outfile, files[i]) && ! standard_input)
-	same = true;
+	same = YES;
       else
 	{
 	  if (! got_outstat)
@@ -1960,7 +2079,7 @@ avoid_trashing_input (char **files, size_t ntemps, size_t nfiles,
 		   : fstat (STDOUT_FILENO, &outstat))
 		  != 0)
 		break;
-	      got_outstat = true;
+	      got_outstat = YES;
 	    }
 
 	  same = (((standard_input
@@ -2053,7 +2172,7 @@ sort (char * const *files, size_t nfiles, char const *output_file)
 {
 	struct buffer buf;
 	size_t ntemps = 0;
-	BOOL output_file_created = false;
+	BOOL output_file_created = NO;
 
 	buf.alloc = 0;
 
@@ -2069,7 +2188,7 @@ sort (char * const *files, size_t nfiles, char const *output_file)
 		if (! buf.alloc)
 			initbuf (&buf, bytes_per_line,
 					sort_buffer_size (&fp, 1, files, nfiles, bytes_per_line));
-		buf.eof = false;
+		buf.eof = NO;
 		files++;
 		nfiles--;
 
@@ -2098,7 +2217,7 @@ sort (char * const *files, size_t nfiles, char const *output_file)
 				xfclose (fp, file);
 				tfp = xfopen (output_file, "w");
 				temp_output = output_file;
-				output_file_created = true;
+				output_file_created = YES;
 			}
 			else
 			{
@@ -2131,7 +2250,7 @@ finish:
 	{
 		size_t i;
 		struct tempnode *node = temphead;
-		char **tempfiles = xnmalloc (ntemps, sizeof *tempfiles);
+		char **tempfiles = mymalloc (ntemps, sizeof *tempfiles);
 		for (i = 0; node; i++)
 		{
 			tempfiles[i] = node->name;
@@ -2172,6 +2291,7 @@ badfieldspec (char const *spec, char const *msgid)
    suffix after the integer.  If MSGID is NULL, return NULL after
    failure; otherwise, report MSGID and exit on failure.  */
 
+#if 0
 static char const *
 parse_field_count (char const *string, size_t *val, char const *msgid)
 {
@@ -2202,6 +2322,7 @@ parse_field_count (char const *string, size_t *val, char const *msgid)
 
   return suffix;
 }
+#endif
 
 /* Handle interrupts and hangups. */
 
@@ -2233,9 +2354,9 @@ set_ordering (register const char *s, struct keyfield *key,
 	{
 	case 'b':
 	  if (blanktype == bl_start || blanktype == bl_both)
-	    key->skipsblanks = true;
+	    key->skipsblanks = YES;
 	  if (blanktype == bl_end || blanktype == bl_both)
-	    key->skipeblanks = true;
+	    key->skipeblanks = YES;
 	  break;
 	case 'd':
 	  key->ignore = nondictionary;
@@ -2244,7 +2365,7 @@ set_ordering (register const char *s, struct keyfield *key,
 	  key->translate = fold_toupper;
 	  break;
 	case 'g':
-	  key->general_numeric = true;
+	  key->general_numeric = YES;
 	  break;
 	case 'i':
 	  /* Option order should not matter, so don't let -i override
@@ -2253,13 +2374,13 @@ set_ordering (register const char *s, struct keyfield *key,
 	    key->ignore = nonprinting;
 	  break;
 	case 'M':
-	  key->month = true;
+	  key->month = YES;
 	  break;
 	case 'n':
-	  key->numeric = true;
+	  key->numeric = YES;
 	  break;
 	case 'r':
-	  key->reverse = true;
+	  key->reverse = YES;
 	  break;
 	default:
 	  return (char *) s;
@@ -2277,6 +2398,7 @@ new_key (void)
   return key;
 }
 
+#if 0
 int
 gnu_main (int argc, char **argv)
 {
@@ -2284,8 +2406,8 @@ gnu_main (int argc, char **argv)
   struct keyfield gkey;
   char const *s;
   int c = 0;
-  BOOL checkonly = false;
-  BOOL mergeonly = false;
+  BOOL checkonly = NO;
+  BOOL mergeonly = NO;
   size_t nfiles = 0;
   BOOL posixly_correct = (getenv ("POSIXLY_CORRECT") != NULL);
   BOOL obsolete_usage = (posix2_version () < 200112);
@@ -2328,7 +2450,7 @@ gnu_main (int argc, char **argv)
       thousands_sep = CHAR_MAX + 1;
   }
 
-  have_read_stdin = false;
+  have_read_stdin = NO;
   inittables ();
 
   {
@@ -2368,8 +2490,8 @@ gnu_main (int argc, char **argv)
   gkey.sword = gkey.eword = SIZE_MAX;
   gkey.ignore = NULL;
   gkey.translate = NULL;
-  gkey.numeric = gkey.general_numeric = gkey.month = gkey.reverse = false;
-  gkey.skipsblanks = gkey.skipeblanks = false;
+  gkey.numeric = gkey.general_numeric = gkey.month = gkey.reverse = NO;
+  gkey.skipsblanks = gkey.skipeblanks = NO;
 
   files = xnmalloc (argc, sizeof *files);
 
@@ -2453,7 +2575,7 @@ gnu_main (int argc, char **argv)
 	  break;
 
 	case 'c':
-	  checkonly = true;
+	  checkonly = YES;
 	  break;
 
 	case 'k':
@@ -2511,7 +2633,7 @@ gnu_main (int argc, char **argv)
 	  break;
 
 	case 'm':
-	  mergeonly = true;
+	  mergeonly = YES;
 	  break;
 
 	case 'o':
@@ -2521,7 +2643,7 @@ gnu_main (int argc, char **argv)
 	  break;
 
 	case 's':
-	  stable = true;
+	  stable = YES;
 	  break;
 
 	case 'S':
@@ -2558,7 +2680,7 @@ gnu_main (int argc, char **argv)
 	  break;
 
 	case 'u':
-	  unique = true;
+	  unique = YES;
 	  break;
 
 	case 'y':
@@ -2655,3 +2777,5 @@ gnu_main (int argc, char **argv)
 
   exit (EXIT_SUCCESS);
 }
+
+#endif /* if 0 */
