@@ -178,10 +178,13 @@ static int mymkstemp(char *template)
 {
     char *temp;
 
+	printf( "mymkstemp file %s\n", template );
     temp = _mktemp(template);
     if (!temp)
         return -1;
 
+	printf( "temp file %p, %p\n", template, temp );
+	printf( "temp file created: %s\n", temp );
     return _open(temp, _O_CREAT | _O_TEMPORARY | _O_EXCL | _O_RDWR, _S_IREAD | _S_IWRITE);
 }
 
@@ -523,7 +526,7 @@ cleanup (void)
 static char *
 create_temp_file (FILE **pfp)
 {
-  static char const slashbase[] = "/sortXXXXXX";
+  static char const slashbase[] = "\\sortXXXXXX";
   static size_t temp_dir_index;
   sigset_t oldset;
   int fd;
@@ -1737,7 +1740,7 @@ check (char const *file_name)
 	    }
 	  while (alloc < line->length);
 
-	  temp.text = xrealloc (temp.text, alloc);
+	  temp.text = realloc (temp.text, alloc);
 	}
       memcpy (temp.text, line->text, line->length);
       temp.length = line->length;
@@ -1852,7 +1855,7 @@ mergefps (char **files, size_t ntemps, size_t nfiles,
 		      }
 		  while ((savealloc *= 2) < smallest->length);
 
-		  saved.text = xrealloc (saved.text, savealloc);
+		  saved.text = realloc (saved.text, savealloc);
 		}
 	      saved.length = smallest->length;
 	      memcpy (saved.text, smallest->text, saved.length);
@@ -2174,6 +2177,14 @@ sort (char * const *files, size_t nfiles, char const *output_file)
 	size_t ntemps = 0;
 	BOOL output_file_created = NO;
 
+	if (temp_dir_count == 0)
+	{
+		char const *tmp_dir = getenv ("TMPDIR");
+		if (!tmp_dir) tmp_dir = getenv ("TMP");
+		if (!tmp_dir) tmp_dir = getenv ("TEMP");
+		add_temp_dir (tmp_dir ? tmp_dir : DEFAULT_TMPDIR);
+	}
+
 	buf.alloc = 0;
 
 	while (nfiles)
@@ -2250,7 +2261,7 @@ finish:
 	{
 		size_t i;
 		struct tempnode *node = temphead;
-		char **tempfiles = mymalloc (ntemps, sizeof *tempfiles);
+		char **tempfiles = malloc (ntemps * (sizeof (*tempfiles)));
 		for (i = 0; node; i++)
 		{
 			tempfiles[i] = node->name;
@@ -2393,7 +2404,7 @@ set_ordering (register const char *s, struct keyfield *key,
 static struct keyfield *
 new_key (void)
 {
-  struct keyfield *key = xzalloc (sizeof *key);
+  struct keyfield *key = calloc (1, sizeof (struct keyfield));
   key->eword = SIZE_MAX;
   return key;
 }

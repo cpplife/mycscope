@@ -463,16 +463,24 @@ cscope: converting to new symbol database file format\n");
 #if defined(__MSDOS__) && defined(TCC)
 		//snprintf(sortcommand, sizeof(sortcommand), "set LC_ALL=C & gnusort -T %s %s", tmpdir, temp1);
 
+		char * files[1];
+		files[0] = temp1;
 		snprintf(sorttempfile, sizeof(sorttempfile), "%s.sort", temp1);
 		printf("%s\n", sorttempfile);
-		sort(temp1, 1, sorttempfile);
+		sort(files, 1, sorttempfile);
+
+		postings = fopen( sorttempfile, "r" );
+		if ( postings == NULL ) {
+			fprintf(stderr, "cscope: cannot open sorted temp file\n");
+			cannotindex();
+		} else {
 #else
 		snprintf(sortcommand, sizeof(sortcommand), "env LC_ALL=C sort -T %s %s", tmpdir, temp1);
-#endif
 		if ((postings = mypopen(sortcommand, "r")) == NULL) {
 			fprintf(stderr, "cscope: cannot open pipe to sort command\n");
 			cannotindex();
 		} else {
+#endif
 			if ((totalterms = invmake(newinvname, newinvpost, postings)) > 0) {
 				movefile(newinvname, invname);
 				movefile(newinvpost, invpost);
