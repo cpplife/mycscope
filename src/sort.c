@@ -174,18 +174,33 @@ static void error (int __status, int __errnum, const char * message, ...)
   fflush (stderr);
 }
 
+#if 0
+static void test_mktemp( void )
+{
+	const char* template = "fnXXXXXX";
+	char buf[128];
+	int i;
+	for ( i = 0; i < 10; ++i ) {
+		strcpy( buf, template );
+		printf( "test mktemp: %s\n", _mktemp( buf ) );
+	}
+}
+#endif
+
 static int mymkstemp(char *template)
 {
     char *temp;
+
+	/* test_mktemp(); */
 
 	printf( "mymkstemp file %s\n", template );
     temp = _mktemp(template);
     if (!temp)
         return -1;
 
-	printf( "temp file %p, %p\n", template, temp );
 	printf( "temp file created: %s\n", temp );
-    return _open(temp, _O_CREAT | _O_TEMPORARY | _O_EXCL | _O_RDWR, _S_IREAD | _S_IWRITE);
+    /*return _open(temp, _O_CREAT | _O_TEMPORARY | _O_EXCL | _O_RDWR, _S_IREAD | _S_IWRITE); */
+    return _open(temp, _O_CREAT | _O_EXCL | _O_RDWR, _S_IREAD | _S_IWRITE);
 }
 
 
@@ -1790,6 +1805,7 @@ mergefps (char **files, size_t ntemps, size_t nfiles,
   /* Read initial lines from each input file. */
   for (i = 0; i < nfiles; )
     {
+	  printf( "xfopen file 3 %s\n", files[i] );
       fps[i] = xfopen (files[i], "r");
       initbuf (&buffer[i], sizeof (struct line_t),
 	       MAX (merge_buffer_size, sort_size / nfiles));
@@ -1816,8 +1832,10 @@ mergefps (char **files, size_t ntemps, size_t nfiles,
 	}
     }
 
-  if (! ofp)
+  if (! ofp) {
+	  printf( "xfopen file 4 %s\n", output_file );
     ofp = xfopen (output_file, "w");
+  }
 
   /* Set up the ord table according to comparisons among input lines.
      Since this only reorders two items if one is strictly greater than
@@ -2191,6 +2209,7 @@ sort (char * const *files, size_t nfiles, char const *output_file)
 	{
 		char const *temp_output;
 		char const *file = *files;
+		printf( "xfopen file %s\n", file );
 		FILE *fp = xfopen (file, "r");
 		FILE *tfp;
 		size_t bytes_per_line = (2 * sizeof (struct line_t)
@@ -2226,6 +2245,7 @@ sort (char * const *files, size_t nfiles, char const *output_file)
 			if (buf.eof && !nfiles && !ntemps && !buf.left)
 			{
 				xfclose (fp, file);
+				printf( "xfopen file 2 %s\n", output_file );
 				tfp = xfopen (output_file, "w");
 				temp_output = output_file;
 				output_file_created = YES;
@@ -2234,6 +2254,7 @@ sort (char * const *files, size_t nfiles, char const *output_file)
 			{
 				++ntemps;
 				temp_output = create_temp_file (&tfp);
+				printf( "create temp file: %d, %s\n", ntemps, temp_output );
 			}
 
 			do
@@ -2267,6 +2288,7 @@ finish:
 			tempfiles[i] = node->name;
 			node = node->next;
 		}
+		printf( "merge 1 \n" );
 		merge (tempfiles, ntemps, ntemps, output_file);
 		free (tempfiles);
 	}
