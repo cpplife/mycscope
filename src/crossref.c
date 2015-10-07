@@ -197,6 +197,15 @@ crossref(char *srcfile)
 static void
 savesymbol(int token, int num)
 {
+#if 1
+	int i;
+	char buf[128];
+	for ( i = 0; i < last - first; ++i ) {
+		buf[i] = *(my_yytext + first + i);
+	}
+	buf[last - first] = '\0';
+	printf( "token: %c(%d), text: %s\n", (char)token, token, buf );
+#endif
     /* make sure there is room for the symbol */
     if (symbols == msymbols) {
 	msymbols += SYMBOLINC;

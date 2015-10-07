@@ -486,7 +486,14 @@ class{wsnl}+{identifier}({wsnl}|{identifier}|[():])*\{	{	/* class definition */
 			goto more;
 			/* NOTREACHED */
 		}
-
+struct{wsnl}+{identifier}{wsnl}+extends({wsnl}|{identifier})*\{	{ /* class definition 2-1 */
+			classdef = YES;
+			tagdef =  'c';
+			yyless(6);		/* eat up 'struct', and re-scan */
+			yy_set_bol(0);
+			goto more;
+			/* NOTREACHED */
+		}
 ("enum"|"struct"|"union")	{
 			ident_start = first;
 			BEGIN(WAS_ESU);
