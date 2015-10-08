@@ -486,7 +486,15 @@ class{wsnl}+{identifier}({wsnl}|{identifier}|[():])*\{	{	/* class definition */
 			goto more;
 			/* NOTREACHED */
 		}
-struct{wsnl}+{identifier}{wsnl}+extends({wsnl}|{identifier})*\{	{ /* class definition 2-1 */
+("struct"|"union"){wsnl}+{identifier}{wsnl}+extends.+\{	{ /* class definition 2-1 */
+			classdef = YES;
+			tagdef =  'c';
+			yyless(6);		/* eat up 'struct', and re-scan */
+			yy_set_bol(0);
+			goto more;
+			/* NOTREACHED */
+		}
+("struct"|"union"){wsnl}+{identifier}{wsnl}*[:].+\{	{ /* class definition 2-2 */
 			classdef = YES;
 			tagdef =  'c';
 			yyless(6);		/* eat up 'struct', and re-scan */

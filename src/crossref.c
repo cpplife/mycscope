@@ -197,7 +197,7 @@ crossref(char *srcfile)
 static void
 savesymbol(int token, int num)
 {
-#if 1
+#if 0
 	int i;
 	char buf[128];
 	for ( i = 0; i < last - first; ++i ) {
