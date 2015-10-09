@@ -486,7 +486,7 @@ class{wsnl}+{identifier}({wsnl}|{identifier}|[():])*\{	{	/* class definition */
 			goto more;
 			/* NOTREACHED */
 		}
-("struct"|"union"){wsnl}+{identifier}{wsnl}+extends.+\{	{ /* class definition 2-1 */
+struct{wsnl}+{identifier}{wsnl}+extends.+\{	{ /* class definition 2-1 */
 			classdef = YES;
 			tagdef =  'c';
 			yyless(6);		/* eat up 'struct', and re-scan */
@@ -494,10 +494,26 @@ class{wsnl}+{identifier}({wsnl}|{identifier}|[():])*\{	{	/* class definition */
 			goto more;
 			/* NOTREACHED */
 		}
-("struct"|"union"){wsnl}+{identifier}{wsnl}*[:].+\{	{ /* class definition 2-2 */
+struct{wsnl}+{identifier}{wsnl}*[:].+\{	{ /* class definition 2-2 */
 			classdef = YES;
 			tagdef =  'c';
 			yyless(6);		/* eat up 'struct', and re-scan */
+			yy_set_bol(0);
+			goto more;
+			/* NOTREACHED */
+		}
+union{wsnl}+{identifier}{wsnl}+extends.+\{	{ /* class definition 2-1 */
+			classdef = YES;
+			tagdef =  'c';
+			yyless(5);		/* eat up 'union', and re-scan */
+			yy_set_bol(0);
+			goto more;
+			/* NOTREACHED */
+		}
+union{wsnl}+{identifier}{wsnl}*[:].+\{	{ /* class definition 2-2 */
+			classdef = YES;
+			tagdef =  'c';
+			yyless(5);		/* eat up 'union', and re-scan */
 			yy_set_bol(0);
 			goto more;
 			/* NOTREACHED */
@@ -508,6 +524,11 @@ class{wsnl}+{identifier}({wsnl}|{identifier}|[():])*\{	{	/* class definition */
 			goto more;
 		}
 <WAS_ESU>{
+({wsnl}+{identifier}){wsnl}*;		{ /* e/s/u declaration */
+			/* skip esu declaration */
+			BEGIN(INITIAL);
+			goto more;
+		}
 ({wsnl}+{identifier}){wsnl}*\{		{ /* e/s/u definition */
 			tagdef = my_yytext[ident_start];
 			BEGIN(WAS_IDENTIFIER);
