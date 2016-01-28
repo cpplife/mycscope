@@ -197,7 +197,7 @@ crossref(char *srcfile)
 static void
 savesymbol(int token, int num)
 {
-#if 0
+#if 0 /* TCC: set to 1 to print the deubug symbol */
 	int i;
 	char buf[128];
 	for ( i = 0; i < last - first; ++i ) {

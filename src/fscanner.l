@@ -478,9 +478,14 @@ wsnl		[ \t\r\v\f\n]|{comment}
 			/* NOTREACHED */
 		}
 
+class({wsnl}+{identifier}){wsnl}*;	{	/* class declaration*/
+			/* skip class declaration */
+			BEGIN(INITIAL);
+			goto more;
+		}
 class{wsnl}+{identifier}({wsnl}|{identifier}|[():])*\{	{	/* class definition */
 			classdef = YES;
-			tagdef =  'c';
+			tagdef =  CLASSDEF;
 			yyless(5);		/* eat up 'class', and re-scan */
 			yy_set_bol(0);
 			goto more;
@@ -488,7 +493,7 @@ class{wsnl}+{identifier}({wsnl}|{identifier}|[():])*\{	{	/* class definition */
 		}
 struct{wsnl}+{identifier}{wsnl}+extends.+\{	{ /* class definition 2-1 */
 			classdef = YES;
-			tagdef =  'c';
+			tagdef =  CLASSDEF;
 			yyless(6);		/* eat up 'struct', and re-scan */
 			yy_set_bol(0);
 			goto more;
@@ -496,23 +501,23 @@ struct{wsnl}+{identifier}{wsnl}+extends.+\{	{ /* class definition 2-1 */
 		}
 struct{wsnl}+{identifier}{wsnl}*[:].+\{	{ /* class definition 2-2 */
 			classdef = YES;
-			tagdef =  'c';
+			tagdef =  CLASSDEF;
 			yyless(6);		/* eat up 'struct', and re-scan */
 			yy_set_bol(0);
 			goto more;
 			/* NOTREACHED */
 		}
-union{wsnl}+{identifier}{wsnl}+extends.+\{	{ /* class definition 2-1 */
+union{wsnl}+{identifier}{wsnl}+extends.+\{	{ /* class definition 3-1 */
 			classdef = YES;
-			tagdef =  'c';
+			tagdef =  CLASSDEF;
 			yyless(5);		/* eat up 'union', and re-scan */
 			yy_set_bol(0);
 			goto more;
 			/* NOTREACHED */
 		}
-union{wsnl}+{identifier}{wsnl}*[:].+\{	{ /* class definition 2-2 */
+union{wsnl}+{identifier}{wsnl}*[:].+\{	{ /* class definition 3-2 */
 			classdef = YES;
-			tagdef =  'c';
+			tagdef =  CLASSDEF;
 			yyless(5);		/* eat up 'union', and re-scan */
 			yy_set_bol(0);
 			goto more;
@@ -601,6 +606,12 @@ if{wsnl}*\(	{ 	/* ignore 'if' */
 			goto ident;
 			/* NOTREACHED */
 		}
+({wsnl})+({identifier}::)+		{	/* scope name */
+						/*printf( "    ident my yylen:%d, yylen:%d\n", my_yyleng, yyleng );*/
+						/*printf( "    ident my yytext:%s, yytext:%s\n", my_yytext, yytext );*/
+						/*printf( "    ident    first:%d, last:%d\n", first, last );*/
+			unput(' ');
+		}
 ("*"|{wsnl})+{identifier}		{	/* typedef name or modifier use */
 			goto ident;
 			/* NOTREACHED */
@@ -616,7 +627,19 @@ if{wsnl}*\(	{ 	/* ignore 'if' */
 					/* if enum/struct/union */
 					token = MEMBERDEF;
 				} else {
-					token = GLOBALDEF;
+						/*printf( "    my yylen:%d, yylen:%d\n", my_yyleng, yyleng );*/
+						/*printf( "    my yytext:%s, yytext:%s\n", my_yytext, yytext );*/
+						/*printf( "       first:%d, last:%d\n", first, last );*/
+					/*if ( 0 && yytext[0] == ':' ) {*/
+						/* skip the class or namespace scope name. */
+						/*last = first;*/
+						/*my_yymore();*/
+						/*goto more;*/
+
+					/*}*/
+					/*else {*/
+						token = GLOBALDEF;
+					/*}*/
 				}
 			} else {
 		ident:
