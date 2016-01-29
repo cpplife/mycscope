@@ -564,6 +564,13 @@ if{wsnl}*\(	{ 	/* ignore 'if' */
 			goto more;
 }	
 
+({identifier}::)+	{	/* scope identifier found: do nothing, yet. (!) */
+			my_yymore();
+			has_scope_dec = YES;
+			unput(' ');
+			/* NOTREACHED */
+		}
+
 {identifier}	{	/* identifier found: do nothing, yet. (!) */
 			BEGIN(WAS_IDENTIFIER);
 			ident_start = first;
@@ -643,6 +650,9 @@ if{wsnl}*\(	{ 	/* ignore 'if' */
 			}
 		fcn:
 			if (YYSTATE == WAS_IDENTIFIER) {
+					/*printf( "    yystate yylen:%d, yylen:%d\n", my_yyleng, yyleng );*/
+					/*printf( "    yystate yytext:%s, yytext:%s\n", my_yytext, yytext );*/
+					/*printf( "    yystate   first:%d, last:%d\n", first, last );*/
 				/* Position back to the actual identifier: */
 				last = first; 
 				first = ident_start;
@@ -655,6 +665,9 @@ if{wsnl}*\(	{ 	/* ignore 'if' */
 				yy_set_bol(0);
 				BEGIN(INITIAL);
 			} else {
+					/*printf( "    no yystate yylen:%d, yylen:%d\n", my_yyleng, yyleng );*/
+					/*printf( "    no yystate yytext:%s, yytext:%s\n", my_yytext, yytext );*/
+					/*printf( "    no yystate   first:%d, last:%d\n", first, last );*/
 				my_yymore();
 				last = my_yyleng;
 			}
