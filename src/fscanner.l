@@ -95,6 +95,7 @@ static	int	templateparens;		/* function template outer parentheses count */
 static	int	typedefbraces = -1;	/* initial typedef brace count */
 static	int	token;			/* token found */
 static	int 	ident_start;		/* begin of preceding identifier */
+static	BOOL	has_scope_dec;		/* variable has scope decoration */
 
 /* If this is defined to 1, use flex rules rather than the input
  * function to discard comments. The scanner gains quite a bit of
@@ -606,11 +607,15 @@ if{wsnl}*\(	{ 	/* ignore 'if' */
 			goto ident;
 			/* NOTREACHED */
 		}
-({wsnl})+({identifier}::)+		{	/* scope name */
+("*"|{wsnl})+({identifier}::)+		{	/* scope name */
 						/*printf( "    ident my yylen:%d, yylen:%d\n", my_yyleng, yyleng );*/
 						/*printf( "    ident my yytext:%s, yytext:%s\n", my_yytext, yytext );*/
 						/*printf( "    ident    first:%d, last:%d\n", first, last );*/
-			unput(' ');
+			my_yymore();
+			if ( YYSTATE == WAS_IDENTIFIER ) {
+				has_scope_dec = YES;
+				unput(' ');
+			}
 		}
 ("*"|{wsnl})+{identifier}		{	/* typedef name or modifier use */
 			goto ident;
@@ -627,19 +632,10 @@ if{wsnl}*\(	{ 	/* ignore 'if' */
 					/* if enum/struct/union */
 					token = MEMBERDEF;
 				} else {
-						/*printf( "    my yylen:%d, yylen:%d\n", my_yyleng, yyleng );*/
-						/*printf( "    my yytext:%s, yytext:%s\n", my_yytext, yytext );*/
-						/*printf( "       first:%d, last:%d\n", first, last );*/
-					/*if ( 0 && yytext[0] == ':' ) {*/
-						/* skip the class or namespace scope name. */
-						/*last = first;*/
-						/*my_yymore();*/
-						/*goto more;*/
-
-					/*}*/
-					/*else {*/
-						token = GLOBALDEF;
-					/*}*/
+					/*printf( "    my yylen:%d, yylen:%d\n", my_yyleng, yyleng );*/
+					/*printf( "    my yytext:%s, yytext:%s\n", my_yytext, yytext );*/
+					/*printf( "       first:%d, last:%d\n", first, last );*/
+					token = GLOBALDEF;
 				}
 			} else {
 		ident:
@@ -935,6 +931,7 @@ initscanner(char *srcfile)
 	templateparens = -1;	/* function template outer parentheses count */
 	typedefbraces = -1;	/* initial typedef braces count */
 	ident_start = 0;	/* start of previously found identifier */
+	has_scope_dec = NO; /* name has scope decoration */
 
 	if (my_yytext)
 		*my_yytext = '\0';
@@ -1114,6 +1111,13 @@ my_yymore(void)
 				      		  yytext_size += MY_YY_ALLOCSTEP);
 	}
 	
-	strncpy (my_yytext + my_yyleng, yytext, yyleng+1);
-	my_yyleng += yyleng;
+	if ( has_scope_dec ) {
+		strncpy (my_yytext + my_yyleng, yytext + 1, yyleng);
+		my_yyleng += yyleng - 1;
+		has_scope_dec = NO;
+	}
+	else {
+		strncpy (my_yytext + my_yyleng, yytext, yyleng+1);
+		my_yyleng += yyleng;
+	}
 }
