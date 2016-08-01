@@ -59,7 +59,7 @@ am__cscope_SOURCES_DIST = fscanner.l scanner.l egrep.y alloc.c alloc.h \
 	help.c history.c input.c invlib.c invlib.h library.h logdir.c \
 	lookup.c lookup.h main.c mouse.c mygetenv.c mypopen.c \
 	scanner.h version.h vp.h vpaccess.c vpfopen.c vpinit.c \
-	vpopen.c sort.c
+	vpopen.c sort.c bm_search.c
 @USING_LEX_FALSE@am__objects_1 = fscanner.$(OBJEXT)
 @USING_LEX_TRUE@am__objects_1 = scanner.$(OBJEXT)
 am_cscope_OBJECTS = $(am__objects_1) egrep.$(OBJEXT) alloc.$(OBJEXT) \
@@ -70,7 +70,7 @@ am_cscope_OBJECTS = $(am__objects_1) egrep.$(OBJEXT) alloc.$(OBJEXT) \
 	invlib.$(OBJEXT) logdir.$(OBJEXT) lookup.$(OBJEXT) \
 	main.$(OBJEXT) mouse.$(OBJEXT) mygetenv.$(OBJEXT) \
 	mypopen.$(OBJEXT) vpaccess.$(OBJEXT) vpfopen.$(OBJEXT) \
-	vpinit.$(OBJEXT) vpopen.$(OBJEXT) sort.$(OBJEXT)
+	vpinit.$(OBJEXT) vpopen.$(OBJEXT) sort.$(OBJEXT) bm_search.$(OBJEXT)
 cscope_OBJECTS = $(am_cscope_OBJECTS)
 am__DEPENDENCIES_1 =
 am__DEPENDENCIES_2 = @LIBOBJS@
@@ -82,7 +82,7 @@ am__gscope_SOURCES_DIST = gscope.c fscanner.l scanner.l egrep.y \
 	global.h help.c history.c input.c invlib.c invlib.h library.h \
 	logdir.c lookup.c lookup.h main.c mouse.c mygetenv.c mypopen.c \
 	scanner.h version.h vp.h vpaccess.c vpfopen.c vpinit.c \
-	vpopen.c sort.c
+	vpopen.c sort.c bm_search.c
 @USING_LEX_FALSE@am__objects_2 = gscope-fscanner.$(OBJEXT)
 @USING_LEX_TRUE@am__objects_2 = gscope-scanner.$(OBJEXT)
 am__objects_3 = $(am__objects_2) gscope-egrep.$(OBJEXT) \
@@ -98,7 +98,7 @@ am__objects_3 = $(am__objects_2) gscope-egrep.$(OBJEXT) \
 	gscope-mouse.$(OBJEXT) gscope-mygetenv.$(OBJEXT) \
 	gscope-mypopen.$(OBJEXT) gscope-vpaccess.$(OBJEXT) \
 	gscope-vpfopen.$(OBJEXT) gscope-vpinit.$(OBJEXT) \
-	gscope-vpopen.$(OBJEXT) gscope-sort.$(OBJEXT)
+	gscope-vpopen.$(OBJEXT) gscope-sort.$(OBJEXT) gscope-bm_search.$(OBJEXT)
 @HAS_GNOME_TRUE@am_gscope_OBJECTS = gscope-gscope.$(OBJEXT) \
 @HAS_GNOME_TRUE@	$(am__objects_3)
 gscope_OBJECTS = $(am_gscope_OBJECTS)
@@ -236,7 +236,7 @@ cscope_SOURCES = $(LEXER_SOURCE) egrep.y alloc.c alloc.h basename.c build.c \
 build.h command.c compath.c constants.h crossref.c dir.c display.c edit.c   \
 exec.c find.c global.h help.c history.c input.c invlib.c invlib.h library.h \
 logdir.c lookup.c lookup.h main.c mouse.c mygetenv.c mypopen.c scanner.h    \
-version.h vp.h vpaccess.c vpfopen.c vpinit.c vpopen.c sort.c
+version.h vp.h vpaccess.c vpfopen.c vpinit.c vpopen.c sort.c bm_search.c
 
 EXTRA_cscope_SOURCES = scanner.l fscanner.l
 cscope_LDADD = $(CURSES_LIBS) $(LEXLIB) $(LIBOBJS)
@@ -364,6 +364,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gscope-vpinit.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gscope-vpopen.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gscope-sort.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gscope-bm_search.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/help.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/history.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/input.Po@am__quote@
@@ -813,6 +814,20 @@ gscope-sort.obj: sort.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	source='sort.c' object='gscope-sort.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(gscope_CFLAGS) $(CFLAGS) -c -o gscope-sort.obj `if test -f 'sort.c'; then $(CYGPATH_W) 'sort.c'; else $(CYGPATH_W) '$(srcdir)/sort.c'; fi`
+
+gscope-bm_search.o: bm_search.c
+@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(gscope_CFLAGS) $(CFLAGS) -MT gscope-bm_search.o -MD -MP -MF "$(DEPDIR)/gscope-bm_search.Tpo" -c -o gscope-bm_search.o `test -f 'bm_search.c' || echo '$(srcdir)/'`bm_search.c; \
+@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/gscope-bm_search.Tpo" "$(DEPDIR)/gscope-bm_search.Po"; else rm -f "$(DEPDIR)/gscope-bm_search.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='bm_search.c' object='gscope-bm_search.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(gscope_CFLAGS) $(CFLAGS) -c -o gscope-bm_search.o `test -f 'bm_search.c' || echo '$(srcdir)/'`bm_search.c
+
+gscope-bm_search.obj: bm_search.c
+@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(gscope_CFLAGS) $(CFLAGS) -MT gscope-bm_search.obj -MD -MP -MF "$(DEPDIR)/gscope-bm_search.Tpo" -c -o gscope-bm_search.obj `if test -f 'bm_search.c'; then $(CYGPATH_W) 'bm_search.c'; else $(CYGPATH_W) '$(srcdir)/bm_search.c'; fi`; \
+@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/gscope-bm_search.Tpo" "$(DEPDIR)/gscope-bm_search.Po"; else rm -f "$(DEPDIR)/gscope-bm_search.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='bm_search.c' object='gscope-bm_search.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(gscope_CFLAGS) $(CFLAGS) -c -o gscope-bm_search.obj `if test -f 'bm_search.c'; then $(CYGPATH_W) 'bm_search.c'; else $(CYGPATH_W) '$(srcdir)/bm_search.c'; fi`
 
 .l.c:
 	$(SHELL) $(YLWRAP) $< $(LEX_OUTPUT_ROOT).c $@ -- $(LEXCOMPILE)

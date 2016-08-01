@@ -47,6 +47,7 @@
 #include <curses.h>
 #endif
 #include <regex.h>
+#include "bm_search.h"
 
 static char const rcsid[] = "$Id: find.c,v 1.25 2012/06/15 11:18:11 nhorman Exp $";
 
@@ -549,6 +550,26 @@ findcalling(char *pattern)
 	}
 	
 	return NULL;
+}
+
+/* find the text in the source files with boyer moore search algorithm */
+
+char *
+findstring_bmsearch( char * pattern )
+{
+    unsigned int i;
+    char *egreperror = "Invalid search!";
+
+	/* search the files */
+	for (i = 0; i < nsrcfiles; ++i) {
+	    char *file = filepath(srcfiles[i]);
+
+	    progress("Search", searchcount, nsrcfiles);
+	    if (cscope_bm_search(file, refsfound, "%s <unknown> %ld ") < 0) {
+		posterr ("Cannot open file %s", file);
+	    }
+	}
+    return(egreperror);
 }
 
 /* find the text in the source files */
