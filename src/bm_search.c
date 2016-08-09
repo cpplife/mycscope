@@ -1,5 +1,6 @@
 #include <stdint.h>
 #include <stdlib.h>
+#include <string.h>
 #include "bm_search.h"
 #include "library.h"
 
@@ -136,12 +137,59 @@ uint8_t* boyer_moore (uint8_t *string, uint32_t stringlen, uint8_t *pat, uint32_
     return NULL;
 }
 
+static int get_line_number( uint8_t* buffer, int buffer_offset )
+{
+	int line = 1;
+	int i = 0;
+	while ( i < buffer_offset ) {
+		if ( buffer[i] == '\n' ) ++line;
+		++i;
+	}
+	return line;
+}
 
-int cscope_bm_search(char *file, FILE *output, char *format)
+int cscope_bm_search(char *file, FILE *output, char *format, char* pat)
 {
 	FILE* fptr;
-	fptr = myfopen(file, "r");
+	int line_number = 1;
+
+	fptr = fopen(file, "rb");
     if (fptr == NULL) return(-1);
+	fseek( fptr, 0, SEEK_END );
+	size_t size = ftell( fptr );
+	uint8_t* buffer = (uint8_t*)mymalloc( size );
+	if ( buffer != NULL ) {
+		fseek( fptr, 0, SEEK_SET );
+		int rv = fread( buffer, 1, size, fptr );
+		if ( rv == size ) {
+			int pat_len = (int)strlen( pat );
+			int buffer_offset = 0;
+			uint8_t* target = boyer_moore( buffer + buffer_offset, size - buffer_offset, (uint8_t*)pat, pat_len );
+			while ( target != NULL ) {
+				line_number = get_line_number( buffer, target - buffer );
+				fprintf( output, format, file, line_number );
+				const char* p = (const char*)target;
+				while ( *p != '\n' && (uint8_t*)p >= buffer ) {
+					--p;
+				}
+				++p;
+				while ( *p != '\n' && ((uint8_t*)p - buffer) < size  ) {
+                    if ( *p >= 20 && *p <= 126 ) {
+					    putc( *p, output );
+                    }
+					++p;
+				}
+				putc( '\n', output );
+				buffer_offset = (target - buffer ) + pat_len;
+				target = NULL;
+				if ( buffer_offset < size ) {
+					target = boyer_moore( buffer + buffer_offset, size - buffer_offset, (uint8_t*)pat, pat_len );
+				}
+			}
+		}
+
+		free( buffer );
+	}
 
 	fclose(fptr);
 	return 0;

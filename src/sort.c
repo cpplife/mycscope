@@ -44,6 +44,9 @@
 #include "xstrtol.h"
 */
 
+#define umaxtostr(x,y) #x#y
+#define xmemcoll(x,y,z,w) 0
+
 #if HAVE_SYS_RESOURCE_H
 # include <sys/resource.h>
 #endif
@@ -333,7 +336,7 @@ static struct month monthtab[] =
 };
 
 /* During the merge phase, the number of files to merge at once. */
-#define NMERGE 16
+#define NMERGE 64
 
 static const size_t LINE_T_SIZE = sizeof( struct line_t );
 
@@ -347,7 +350,7 @@ static const size_t LINE_T_SIZE = sizeof( struct line_t );
    function relatively efficiently even if it holds only one line.  If
    a longer line is seen, this value is increased.  */
 /* static size_t merge_buffer_size = MAX (MIN_MERGE_BUFFER_SIZE, 256 * 1024); */
-static size_t merge_buffer_size = 256 * 1024;
+static size_t merge_buffer_size = 1024 * 1024;
 
 /* The approximate maximum number of bytes of main memory to use, as
    specified by the user.  Zero if the user has not specified a size.  */
@@ -688,6 +691,7 @@ struct_month_cmp (const void *m1, const void *m2)
 
 /* Initialize the character class tables. */
 
+#if 0
 static void
 inittables (void)
 {
@@ -726,6 +730,7 @@ inittables (void)
     }
 #endif
 }
+#endif
 
 #if 0
 /* Specify the amount of main memory to use when sorting.  */
@@ -802,7 +807,7 @@ default_sort_size (void)
   double mem = MAX (avail, total / 8);
   */
   /* set the mem as fixed 128MB size */
-  double mem = 128*1024*1024;
+  double mem = 256*1024*1024;
   struct rlimit rlimit;
 
   /* Let SIZE be MEM, but no more than the maximum object size or

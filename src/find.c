@@ -565,7 +565,7 @@ findstring_bmsearch( char * pattern )
 	    char *file = filepath(srcfiles[i]);
 
 	    progress("Search", searchcount, nsrcfiles);
-	    if (cscope_bm_search(file, refsfound, "%s <unknown> %ld ") < 0) {
+	    if (cscope_bm_search(file, refsfound, "%s <unknown> %ld ", pattern) < 0) {
 		posterr ("Cannot open file %s", file);
 	    }
 	}

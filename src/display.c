@@ -107,7 +107,7 @@ static	struct	{		/* text of input fields */
 	{"Find this", "global definition",		finddef},
 	{"Find", "functions called by this function",	findcalledby},
 	{"Find", "functions calling this function",	findcalling},
-	{"Find this", "text string",			findstring},
+	{"Find this", "text string",			findstring_bmsearch},
 	{"Change this", "text string",			findstring},
 	{"Find this", "egrep pattern",			findregexp},
 	{"Find this", "file",				findfile},
@@ -429,7 +429,7 @@ search(void)
 	savesig = signal(SIGINT, jumpback);
 	if (sigsetjmp(env, 1) == 0) {
 		f = fields[field].findfcn;
-		if (f == findregexp || f == findstring) {
+		if (f == findregexp || f == findstring || f == findstring_bmsearch) {
 			findresult = (*f)(Pattern);
 		} else {
 			if ((nonglobalrefs = myfopen(temp2, "wb")) == NULL) {

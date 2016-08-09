@@ -346,6 +346,7 @@ char	*findsymbol(char *pattern);
 char	*findassign(char *pattern);
 char	*findregexp(char *egreppat);
 char	*findstring(char *pattern);
+char	*findstring_bmsearch(char *pattern);
 char	*inviewpath(char *file);
 char	*lookup(char *ident);
 char	*pathcomponents(char *path, int components);
