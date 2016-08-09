@@ -1,6 +1,7 @@
 My modification of cscope for win32.
 
 == Build with MinGW ==
+
 1. Install MinGw and MSYS, make sure bison (or flex and yacc) installed;
 2. Install mingw-libpdcurses;
 2. Copy 3rd include dir and lib dir into MinGW include and lib paths;
