@@ -3,6 +3,7 @@
 #include <string.h>
 #include "bm_search.h"
 #include "library.h"
+#include <pthread.h>
 
 #define ALPHABET_LEN 256
 #define NOT_FOUND patlen
@@ -106,34 +107,102 @@ void make_delta2(int *delta2, uint8_t *pat, int32_t patlen) {
     }
 }
 
-uint8_t* boyer_moore (uint8_t *string, uint32_t stringlen, uint8_t *pat, uint32_t patlen) {
+static struct {
+	/* parameters for output.*/
+	FILE* output;
+	char* format;
+	/* search file count */
+	int file_count;
+	/* search pattern */
+	char* pat;
+	int* delta1;
+	int* delta2;
+	worker_info_t* workers;
+} bm_search_data;
+
+
+typedef struct {
+	int* delta1;
+	int* delta2;
+	uint8_t* text;
+	uint32_t text_len;
+	uint8_t* pat;
+	uint32_t pat_len;
+	int line_number;
+} bm_search_state_t;
+
+static void bm_search_init( bm_search_state_t* state, 
+		uint8_t *string, uint32_t stringlen, uint8_t *pat, uint32_t patlen )
+{
+	state->delta1 = (int*)malloc( ALPHABET_LEN * sizeof(int) );
+	state->delta2 = (int*)malloc( patlen * sizeof(int) );
+
+    make_delta1(state->delta1, pat, patlen);
+    make_delta2(state->delta2, pat, patlen);
+
+	state->text = string;
+	state->text_len = stringlen;
+	state->pat = pat;
+	state->pat_len = patlen;
+
+	state->line_number = 1;
+}
+
+static void bm_search_deinit( bm_search_state_t* state )
+{
+	free( state->delta1 );
+	free( state->delta2 );
+}
+
+static void 
+bm_search_set( bm_search_state_t* state, int* delta1, int* delta2,
+		uint8_t *string, uint32_t stringlen, uint8_t *pat, uint32_t patlen )
+{
+	state->delta1 = delta1;
+	state->delta2 = delta2;
+
+	state->text = string;
+	state->text_len = stringlen;
+	state->pat = pat;
+	state->pat_len = patlen;
+
+	state->line_number = 1;
+}
+
+static uint8_t* boyer_moore( bm_search_state_t* state ) {
     int i;
-    int delta1[ALPHABET_LEN];
-    int *delta2 = (int *)malloc(patlen * sizeof(int));
-    make_delta1(delta1, pat, patlen);
-    make_delta2(delta2, pat, patlen);
+    int* delta1 = state->delta1;
+    int* delta2 = state->delta2;
+	uint8_t* string = state->text;
+	uint32_t stringlen = state->text_len;
+	uint8_t* pat = state->pat;
+	uint32_t patlen = state->pat_len;
+	int step;
 
     // The empty pattern must be considered specially
     if (patlen == 0) {
-        free(delta2);
         return string;
     }
 
     i = patlen-1;
+	step = i;
     while (i < stringlen) {
+		int k = 0;
+		for ( ; k < step; ++k ) {
+			if (string[i - k ] == '\n') ++state->line_number;
+		}
         int j = patlen-1;
         while (j >= 0 && (string[i] == pat[j])) {
             --i;
             --j;
         }
         if (j < 0) {
-            free(delta2);
             return (string + i+1);
         }
 
-        i += max(delta1[string[i]], delta2[j]);
+        step = max(delta1[string[i]], delta2[j]);
+		i += step;
     }
-    free(delta2);
     return NULL;
 }
 
@@ -148,7 +217,12 @@ static int get_line_number( uint8_t* buffer, int buffer_offset )
 	return line;
 }
 
-int cscope_bm_search(char *file, FILE *output, char *format, char* pat)
+static int is_printable_char( uint8_t c )
+{
+	return c >= 20 && c <= 126;
+}
+
+int bm_search(char *file, FILE *output, char *format, char* pat)
 {
 	FILE* fptr;
 	int line_number = 1;
@@ -164,9 +238,13 @@ int cscope_bm_search(char *file, FILE *output, char *format, char* pat)
 		if ( rv == size ) {
 			int pat_len = (int)strlen( pat );
 			int buffer_offset = 0;
-			uint8_t* target = boyer_moore( buffer + buffer_offset, size - buffer_offset, (uint8_t*)pat, pat_len );
+
+
+			bm_search_state_t state;
+			bm_search_init( &state, buffer, size, (uint8_t*)pat, pat_len );
+			uint8_t* target = boyer_moore( &state );
 			while ( target != NULL ) {
-				line_number = get_line_number( buffer, target - buffer );
+				line_number = state.line_number;
 				fprintf( output, format, file, line_number );
 				const char* p = (const char*)target;
 				while ( *p != '\n' && (uint8_t*)p >= buffer ) {
@@ -174,16 +252,85 @@ int cscope_bm_search(char *file, FILE *output, char *format, char* pat)
 				}
 				++p;
 				while ( *p != '\n' && ((uint8_t*)p - buffer) < size  ) {
-                    if ( *p >= 20 && *p <= 126 ) {
-					    putc( *p, output );
-                    }
+					if ( is_printable_char( *p ) ) {
+						putc( *p, output );
+					}
 					++p;
 				}
 				putc( '\n', output );
 				buffer_offset = (target - buffer ) + pat_len;
 				target = NULL;
 				if ( buffer_offset < size ) {
-					target = boyer_moore( buffer + buffer_offset, size - buffer_offset, (uint8_t*)pat, pat_len );
+					state.text = buffer + buffer_offset;
+					state.text_len = size - buffer_offset;
+					target = boyer_moore( &state );
+				}
+			}
+			bm_search_deinit( &state );
+		}
+
+		free( buffer );
+	}
+
+	fclose(fptr);
+	return 0;
+}
+
+
+static void bm_search_set_match( match_info_t* match,
+		char* filename, int line_number, size_t offset )
+{
+	match->filename    = filename;
+	match->line_number = line_number;
+	match->offset      = offset;
+	match->next        = NULL;
+}
+
+
+static match_info_t* 
+bm_search_match(char *file, char* pat, int* delta1, int* delta2, match_info_t** last )
+{
+	FILE* fptr;
+	size_t size;
+	uint8_t* buffer, *target;
+	int pat_len, buffer_offset;
+	match_info_t* match_list, *match_last;
+
+	match_list = NULL; match_last = NULL;
+
+	fptr = fopen(file, "rb");
+    if (fptr == NULL) return NULL;
+	fseek( fptr, 0, SEEK_END );
+	size = ftell( fptr );
+	buffer = (uint8_t*)mymalloc( size );
+	if ( buffer != NULL ) {
+		fseek( fptr, 0, SEEK_SET );
+		if ( fread( buffer, 1, size, fptr ) == size ) {
+			pat_len = (int)strlen( pat );
+			buffer_offset = 0;
+
+			bm_search_state_t state;
+			bm_search_set( &state, delta1, delta2, buffer, size, (uint8_t*)pat, pat_len ); 
+			target = boyer_moore( &state );
+			while ( target != NULL ) {
+
+				match_info_t* m = malloc( sizeof( match_info_t ) );
+				bm_search_set_match( m, file, state.line_number, target - buffer );
+				if ( match_list == NULL ) {
+					match_list = m;
+					match_last = m;
+				}
+				else {
+					match_last->next = m;
+					match_last = m;
+				}
+
+				buffer_offset = (target - buffer ) + pat_len;
+				target = NULL;
+				if ( buffer_offset < size ) {
+					state.text = buffer + buffer_offset;
+					state.text_len = size - buffer_offset;
+					target = boyer_moore( &state );
 				}
 			}
 		}
@@ -192,5 +339,193 @@ int cscope_bm_search(char *file, FILE *output, char *format, char* pat)
 	}
 
 	fclose(fptr);
+	if ( last != NULL ) *last = match_last;
+	return match_list;
+}
+
+static void* bm_search_worker( void* p )
+{
+	int i = *(int*)p;
+	file_info_t* f;
+	match_info_t* m, *l;
+	worker_info_t* w = &bm_search_data.workers[i];
+
+	f = w->file_list;
+	while ( f != NULL ) {
+		m = bm_search_match( f->filename, bm_search_data.pat, 
+				bm_search_data.delta1, bm_search_data.delta2, &l );
+		if ( w->match_list == NULL ) {
+			w->match_list = m;
+			w->match_last = l;
+		}
+		else if ( m != NULL ) {
+			w->match_last->next = m;
+			w->match_last = l;
+		}
+		f = f->next;
+	}
+}
+
+extern int thread_worker_count;
+
+int bm_search_worker_init( FILE* output, char* fmt, char* pat, int file_count )
+{
+	int i;
+	int patlen;
+	if ( thread_worker_count < 2 ) return -1;
+
+	bm_search_data.output     = output;
+	bm_search_data.format     = fmt;
+	bm_search_data.file_count = file_count;
+	bm_search_data.pat        = pat;
+
+	patlen = strlen( pat );
+
+	bm_search_data.delta1 = (int*)malloc( ALPHABET_LEN * sizeof(int) );
+	bm_search_data.delta2 = (int*)malloc( patlen * sizeof(int) );
+
+    make_delta1(bm_search_data.delta1, pat, patlen);
+    make_delta2(bm_search_data.delta2, pat, patlen);
+
+	bm_search_data.workers = malloc( sizeof(worker_info_t) * thread_worker_count );
+	for ( i = 0; i < thread_worker_count; ++i ) {
+		bm_search_data.workers[i].file_list  = NULL;
+		bm_search_data.workers[i].file_last  = NULL;
+		bm_search_data.workers[i].match_list = NULL;
+		bm_search_data.workers[i].match_last = NULL;
+	}
+	return 0;
+}
+
+void bm_search_worker_deinit( void )
+{
+	file_info_t* f, *temp_f;
+	match_info_t* m, *temp_m;
+	int i;
+	for ( i = 0; i < thread_worker_count; ++i ) {
+		f = bm_search_data.workers[i].file_list;
+		while ( f != NULL ) {
+			temp_f = f->next;
+			free( f );
+			f = temp_f;
+		}
+		m = bm_search_data.workers[i].match_list;
+		while ( m != NULL ) {
+			temp_m = m->next;
+			free( m );
+			m = temp_m;
+		}
+	}
+
+	free( bm_search_data.workers );
+	free( bm_search_data.delta1 );
+	free( bm_search_data.delta2 );
+
+	bm_search_data.workers = NULL;
+	bm_search_data.delta1 = NULL;
+	bm_search_data.delta2 = NULL;
+
+	bm_search_data.output = NULL;
+	bm_search_data.pat    = NULL;
+}
+
+int bm_search_worker_add( int index, char* file )
+{
+	if ( index < 0 || index >= bm_search_data.file_count ) return -1;
+
+	int file_count_for_on_worker = bm_search_data.file_count / thread_worker_count;
+
+	int id = index / file_count_for_on_worker;
+	if ( id > thread_worker_count - 1 ) id = thread_worker_count - 1;
+
+
+	file_info_t* f = malloc( sizeof( file_info_t ) );
+	f->filename = file;
+	f->next = NULL;
+	if ( bm_search_data.workers[id].file_list == NULL ) {
+		bm_search_data.workers[id].file_list = f;
+		bm_search_data.workers[id].file_last = f;
+	}
+	else {
+		bm_search_data.workers[id].file_last->next = f;
+		bm_search_data.workers[id].file_last = f;
+	}
+
+	return 0;
+}
+
+
+static void bm_search_print_match( match_info_t* m, FILE* output, char* fmt )
+{
+	FILE* fptr;
+	int offset;
+	static const int BUF_LEN = 128;
+	char buf[BUF_LEN];
+	int rv;
+	const char* p;
+
+	fprintf( output, fmt, m->filename, m->line_number );
+
+	fptr = fopen(m->filename, "rb");
+	if ( fptr == NULL ) return;
+
+	offset = m->offset - BUF_LEN / 2;
+	if (offset < 0 ) offset = 0;
+	fseek( fptr, offset, SEEK_SET );
+	rv = fread( buf, 1, BUF_LEN, fptr );
+	if ( rv > 0 ) {
+		p = buf + BUF_LEN / 2;
+		while ( *p != '\n' && p >= buf ) {
+			--p;
+		}
+		++p;
+		while ( *p != '\n' && (p - buf ) < BUF_LEN  ) {
+			if ( is_printable_char( *p ) ) {
+				putc( *p, output );
+			}
+			++p;
+		}
+		putc( '\n', output );
+	}
+	fclose( fptr );
+}
+
+void bm_search_print_out( void )
+{
+	int i;
+	match_info_t* m;
+
+	for ( i = 0; i < thread_worker_count; ++i ) {
+		m = bm_search_data.workers[i].match_list;
+		while ( m != NULL ) {
+			bm_search_print_match( m, bm_search_data.output, bm_search_data.format );
+			m = m->next;
+		}
+	}
+}
+
+
+int bm_search_worker_run( void )
+{
+	int* thread_id;
+	pthread_t* thread;
+	int i, rv;
+
+	thread = malloc( sizeof( pthread_t ) * thread_worker_count );
+	thread_id = malloc( sizeof(int)*thread_worker_count );
+
+	for ( i = 0; i < thread_worker_count; ++i ) {
+		thread_id[i] = i;
+		rv = pthread_create( &thread[i], NULL, bm_search_worker,  &thread_id[i] );
+		if ( rv != 0 ) {
+			return -1;
+		}
+	}
+
+	/* block until all threads finish. */
+	for ( i = 0; i < thread_worker_count; ++i ) {
+		pthread_join( thread[i], NULL );
+	}
+
 	return 0;
 }

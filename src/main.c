@@ -110,6 +110,9 @@ BOOL	trun_syms;		/* truncate symbols to 8 characters */
 char	tempstring[TEMPSTRING_LEN + 1]; /* use this as a buffer, instead of 'yytext', 
 				 * which had better be left alone */
 char	*tmpdir;		/* temporary directory */
+int		thread_worker_count = 8; /* Give the thread count */
+
+
 
 static	BOOL	onesearch;		/* one search only in line mode */
 static	char	*reflines;		/* symbol reference lines file */
@@ -783,12 +786,16 @@ cscope: cannot read source file name from file %s\n",
 		
 	for (;;) {
 	    char buf[PATLEN + 2];
+		buf[0] = '\0';
 			
 	    printf(">> ");
 	    fflush(stdout);
+		clearerr(stdin);
+
 	    if (fgets(buf, sizeof(buf), stdin) == NULL) {
-		myexit(0);
+			myexit(0);
 	    }
+
 	    /* remove any trailing newline character */
 	    if (*(s = buf + strlen(buf) - 1) == '\n') {
 		*s = '\0';

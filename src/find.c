@@ -565,11 +565,40 @@ findstring_bmsearch( char * pattern )
 	    char *file = filepath(srcfiles[i]);
 
 	    progress("Search", searchcount, nsrcfiles);
-	    if (cscope_bm_search(file, refsfound, "%s <unknown> %ld ", pattern) < 0) {
+	    if (bm_search(file, refsfound, "%s <unknown> %ld ", pattern) < 0) {
 		posterr ("Cannot open file %s", file);
 	    }
 	}
     return(egreperror);
+}
+
+/* find the text in the source files with boyer moore search algorithm
+ * with multi thread.
+ */
+
+
+
+char *
+findstring_bmsearch_multithread( char * pattern )
+{
+    unsigned int i;
+    char *error = "Invalid search!";
+
+	bm_search_worker_init( refsfound, "%s <text> %ld ", pattern, nsrcfiles );
+
+	/* add files into workers. */
+	for (i = 0; i < nsrcfiles; ++i) {
+		bm_search_worker_add( i, filepath(srcfiles[i]) );
+	}
+	/* run the threads to find the pattern */
+	if ( bm_search_worker_run() ) {
+		posterr( "Failed to start search workers!" );
+	}
+	/* print out the result */
+	bm_search_print_out();
+
+	bm_search_worker_deinit();
+    return(error);
 }
 
 /* find the text in the source files */

@@ -1,6 +1,6 @@
 #! /bin/sh
 
-export LIBS=-lrxspencer
+export LIBS="-lrxspencer -lpthreadVC2"
 export LDFLAGS=-static
 ./configure
 

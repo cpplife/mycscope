@@ -107,7 +107,7 @@ static	struct	{		/* text of input fields */
 	{"Find this", "global definition",		finddef},
 	{"Find", "functions called by this function",	findcalledby},
 	{"Find", "functions calling this function",	findcalling},
-	{"Find this", "text string",			findstring_bmsearch},
+	{"Find this", "text string",			findstring_bmsearch_multithread},
 	{"Change this", "text string",			findstring},
 	{"Find this", "egrep pattern",			findregexp},
 	{"Find this", "file",				findfile},
