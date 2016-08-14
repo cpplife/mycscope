@@ -118,6 +118,9 @@ static struct {
 	int* delta1;
 	int* delta2;
 	worker_info_t* workers;
+	/* mutex for print*/
+	pthread_mutex_t output_lock;
+
 } bm_search_data;
 
 
@@ -286,7 +289,6 @@ static void bm_search_set_match( match_info_t* match,
 	match->next        = NULL;
 }
 
-
 static match_info_t* 
 bm_search_match(char *file, char* pat, int* delta1, int* delta2, match_info_t** last )
 {
@@ -366,6 +368,118 @@ static void* bm_search_worker( void* p )
 	}
 }
 
+static void
+bm_search_output_match( match_info_t* m, FILE* output, char* fmt, char* buffer, size_t buffer_len )
+{
+	int offset;
+	static const int BUF_LEN = 128;
+	int rv;
+	const char* p;
+
+	pthread_mutex_lock( &bm_search_data.output_lock );
+
+	fprintf( output, fmt, m->filename, m->line_number );
+
+	offset = m->offset;
+	{
+		p = (char*)buffer + offset;
+		while ( *p != '\n' && p >= buffer ) {
+			--p;
+		}
+		++p;
+		while ( *p != '\n' && (p - buffer ) < buffer_len ) {
+			if ( is_printable_char( *p ) ) {
+				putc( *p, output );
+			}
+			++p;
+		}
+		putc( '\n', output );
+	}
+	pthread_mutex_unlock( &bm_search_data.output_lock );
+}
+
+static void 
+bm_search_and_output_match(char *file, char* pat, int* delta1, int* delta2 )
+{
+	FILE* fptr;
+	size_t size;
+	uint8_t* buffer, *target;
+	int pat_len, buffer_offset;
+	match_info_t* match_list, *match_last, *m;
+
+	match_list = NULL; match_last = NULL;
+
+	fptr = fopen(file, "rb");
+    if (fptr == NULL) return;
+	fseek( fptr, 0, SEEK_END );
+	size = ftell( fptr );
+	buffer = (uint8_t*)mymalloc( size );
+	if ( buffer != NULL ) {
+		fseek( fptr, 0, SEEK_SET );
+		if ( fread( buffer, 1, size, fptr ) == size ) {
+			pat_len = (int)strlen( pat );
+			buffer_offset = 0;
+
+			bm_search_state_t state;
+			bm_search_set( &state, delta1, delta2, buffer, size, (uint8_t*)pat, pat_len ); 
+			target = boyer_moore( &state );
+			while ( target != NULL ) {
+
+				match_info_t* m = malloc( sizeof( match_info_t ) );
+				bm_search_set_match( m, file, state.line_number, target - buffer );
+				if ( match_list == NULL ) {
+					match_list = m;
+					match_last = m;
+				}
+				else {
+					match_last->next = m;
+					match_last = m;
+				}
+
+				buffer_offset = (target - buffer ) + pat_len;
+				target = NULL;
+				if ( buffer_offset < size ) {
+					state.text = buffer + buffer_offset;
+					state.text_len = size - buffer_offset;
+					target = boyer_moore( &state );
+				}
+			}
+		}
+		/* output the match result */
+		m = match_list;
+		while ( m != NULL ) {
+			bm_search_output_match( m, bm_search_data.output, bm_search_data.format, buffer, size );
+			m = m->next;
+		}
+
+		free( buffer );
+	}
+	/* clear the match list */
+	m = match_list;
+	while ( m != NULL ) {
+		match_info_t* temp = m;
+		m = m->next;
+		free( temp );
+	}
+
+	fclose(fptr);
+	return;
+}
+
+static void* bm_search_and_output_worker( void* p )
+{
+	int i = *(int*)p;
+	file_info_t* f;
+	worker_info_t* w = &bm_search_data.workers[i];
+
+	f = w->file_list;
+	while ( f != NULL ) {
+		bm_search_and_output_match( f->filename, bm_search_data.pat, 
+				bm_search_data.delta1, bm_search_data.delta2 );
+		f = f->next;
+	}
+}
+
 extern int thread_worker_count;
 
 int bm_search_worker_init( FILE* output, char* fmt, char* pat, int file_count )
@@ -394,6 +508,8 @@ int bm_search_worker_init( FILE* output, char* fmt, char* pat, int file_count )
 		bm_search_data.workers[i].match_list = NULL;
 		bm_search_data.workers[i].match_last = NULL;
 	}
+
+	 pthread_mutex_init( &bm_search_data.output_lock, NULL );
 	return 0;
 }
 
@@ -416,6 +532,8 @@ void bm_search_worker_deinit( void )
 			m = temp_m;
 		}
 	}
+
+	pthread_mutex_destroy( &bm_search_data.output_lock );
 
 	free( bm_search_data.workers );
 	free( bm_search_data.delta1 );
@@ -517,6 +635,34 @@ int bm_search_worker_run( void )
 	for ( i = 0; i < thread_worker_count; ++i ) {
 		thread_id[i] = i;
 		rv = pthread_create( &thread[i], NULL, bm_search_worker,  &thread_id[i] );
+		if ( rv != 0 ) {
+			return -1;
+		}
+	}
+
+	/* block until all threads finish. */
+	for ( i = 0; i < thread_worker_count; ++i ) {
+		pthread_join( thread[i], NULL );
+	}
+
+	/* print out the result */
+	bm_search_print_out();
+
+	return 0;
+}
+
+int bm_search_and_output_worker_run( void )
+{
+	int* thread_id;
+	pthread_t* thread;
+	int i, rv;
+
+	thread = malloc( sizeof( pthread_t ) * thread_worker_count );
+	thread_id = malloc( sizeof(int)*thread_worker_count );
+
+	for ( i = 0; i < thread_worker_count; ++i ) {
+		thread_id[i] = i;
+		rv = pthread_create( &thread[i], NULL, bm_search_and_output_worker,  &thread_id[i] );
 		if ( rv != 0 ) {
 			return -1;
 		}

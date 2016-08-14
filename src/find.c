@@ -591,11 +591,9 @@ findstring_bmsearch_multithread( char * pattern )
 		bm_search_worker_add( i, filepath(srcfiles[i]) );
 	}
 	/* run the threads to find the pattern */
-	if ( bm_search_worker_run() ) {
+	if ( bm_search_and_output_worker_run() ) {
 		posterr( "Failed to start search workers!" );
 	}
-	/* print out the result */
-	bm_search_print_out();
 
 	bm_search_worker_deinit();
     return(error);

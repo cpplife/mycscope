@@ -31,4 +31,5 @@ int  bm_search_worker_init( FILE* output, char* fmt, char* pat, int file_count )
 void bm_search_worker_deinit( void );
 int  bm_search_worker_add( int index, char* file );
 int  bm_search_worker_run( void );
+int  bm_search_and_output_worker_run( void );
 
