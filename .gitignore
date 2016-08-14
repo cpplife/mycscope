@@ -1,0 +1,16 @@
+*.o
+*.exe
+.deps/
+config.log
+config.h
+config.status
+Makefile
+stamp-h1
+egrep.c
+fscanner.c
+cscope.out
+cscope.in.out
+cscope.po.out
+.vs/
+.vscode/
+
