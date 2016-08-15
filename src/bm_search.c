@@ -121,6 +121,15 @@ static struct {
 	/* mutex for print*/
 	pthread_mutex_t output_lock;
 
+	/* mutex for global worker. */
+	pthread_mutex_t global_worker_lock;
+	/* cond for global worker. */
+	pthread_cond_t global_worker_cond;
+	/* global worker for all threads. */
+	worker_info_t global_worker;
+	/* flag for checking if all files have been added into global worker */
+	int finish_of_adding_files;
+
 } bm_search_data;
 
 
@@ -510,6 +519,14 @@ int bm_search_worker_init( FILE* output, char* fmt, char* pat, int file_count )
 	}
 
 	 pthread_mutex_init( &bm_search_data.output_lock, NULL );
+	 pthread_mutex_init( &bm_search_data.global_worker_lock, NULL );
+	 pthread_cond_init( &bm_search_data.global_worker_cond, NULL );
+
+	 bm_search_data.global_worker.file_list = NULL;
+	 bm_search_data.global_worker.file_last = NULL;
+
+	 bm_search_data.finish_of_adding_files = 0;
+
 	return 0;
 }
 
@@ -533,6 +550,15 @@ void bm_search_worker_deinit( void )
 		}
 	}
 
+	f = bm_search_data.global_worker.file_list;
+	while ( f != NULL ) {
+		temp_f = f->next;
+		free( f );
+		f = temp_f;
+	}
+
+	pthread_cond_destroy( &bm_search_data.global_worker_cond );
+	pthread_mutex_destroy( &bm_search_data.global_worker_lock );
 	pthread_mutex_destroy( &bm_search_data.output_lock );
 
 	free( bm_search_data.workers );
@@ -545,6 +571,11 @@ void bm_search_worker_deinit( void )
 
 	bm_search_data.output = NULL;
 	bm_search_data.pat    = NULL;
+
+	bm_search_data.global_worker.file_list = NULL;
+	bm_search_data.global_worker.file_last = NULL;
+
+	bm_search_data.finish_of_adding_files = 0;
 }
 
 int bm_search_worker_add( int index, char* file )
@@ -571,7 +602,6 @@ int bm_search_worker_add( int index, char* file )
 
 	return 0;
 }
-
 
 static void bm_search_print_match( match_info_t* m, FILE* output, char* fmt )
 {
@@ -675,3 +705,92 @@ int bm_search_and_output_worker_run( void )
 
 	return 0;
 }
+
+/*****************************************************************************/
+
+static void* bm_search_and_output_from_global_worker( void* p )
+{
+	int i = *(int*)p;
+	(void)i;
+	file_info_t* f;
+
+	while ( 1 ) {
+		pthread_mutex_lock( &bm_search_data.global_worker_lock );
+		f = bm_search_data.global_worker.file_list;
+		while ( f == NULL ) {
+			if ( bm_search_data.finish_of_adding_files ) {
+				pthread_mutex_unlock( &bm_search_data.global_worker_lock );
+				pthread_exit( NULL );
+			}
+			pthread_cond_wait( &bm_search_data.global_worker_cond, &bm_search_data.global_worker_lock );
+		}
+
+		bm_search_data.global_worker.file_list = bm_search_data.global_worker.file_list->next;
+		if ( bm_search_data.global_worker.file_list == NULL ) {
+			bm_search_data.global_worker.file_last = NULL;
+		}
+		pthread_mutex_unlock( &bm_search_data.global_worker_lock );
+
+		bm_search_and_output_match( f->filename, bm_search_data.pat, 
+				bm_search_data.delta1, bm_search_data.delta2 );
+
+		free( f );
+	}
+}
+
+static void bm_search_worker_add_into_global( char* file, int finish_of_adding_files )
+{
+	file_info_t* f = malloc( sizeof( file_info_t ) );
+	f->filename = file;
+	f->next = NULL;
+
+	pthread_mutex_lock( &bm_search_data.global_worker_lock );
+
+	if ( bm_search_data.global_worker.file_list == NULL ) {
+		bm_search_data.global_worker.file_list = f;
+		bm_search_data.global_worker.file_last = f;
+	}
+	else {
+		bm_search_data.global_worker.file_last->next = f;
+		bm_search_data.global_worker.file_last = f;
+	}
+
+	bm_search_data.finish_of_adding_files = finish_of_adding_files;
+
+	pthread_cond_signal( &bm_search_data.global_worker_cond );
+	pthread_mutex_unlock( &bm_search_data.global_worker_lock );
+}
+
+
+int bm_search_and_output_global_worker_run( char** file_name_list, int file_count )
+{
+	int* thread_id;
+	pthread_t* thread;
+	int i, rv;
+
+	if ( file_count <= 0 ) return -1;
+
+	/* create work thread */
+	thread = malloc( sizeof( pthread_t ) * thread_worker_count );
+	thread_id = malloc( sizeof(int)*thread_worker_count );
+
+	for ( i = 0; i < thread_worker_count; ++i ) {
+		thread_id[i] = i;
+		rv = pthread_create( &thread[i], NULL, bm_search_and_output_from_global_worker,  &thread_id[i] );
+		if ( rv != 0 ) {
+			return -1;
+		}
+	}
+	/* add files into global list */
+	for ( i = 0; i < file_count; ++i ) {
+		bm_search_worker_add_into_global( file_name_list[i], i == file_count - 1 );
+	}
+
+	/* block until all threads finish. */
+	for ( i = 0; i < thread_worker_count; ++i ) {
+		pthread_join( thread[i], NULL );
+	}
+
+	return 0;
+}
+

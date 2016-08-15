@@ -576,10 +576,8 @@ findstring_bmsearch( char * pattern )
  * with multi thread.
  */
 
-
-
-char *
-findstring_bmsearch_multithread( char * pattern )
+static char *
+bmsearch_multithread( char * pattern )
 {
     unsigned int i;
     char *error = "Invalid search!";
@@ -597,6 +595,29 @@ findstring_bmsearch_multithread( char * pattern )
 
 	bm_search_worker_deinit();
     return(error);
+}
+
+static char *
+bmsearch_multithread2( char * pattern )
+{
+    unsigned int i;
+    char *error = "Invalid search!";
+
+	bm_search_worker_init( refsfound, "%s <text> %ld ", pattern, nsrcfiles );
+
+	/* run the threads to find the pattern */
+	if ( bm_search_and_output_global_worker_run( srcfiles, nsrcfiles ) ) {
+		posterr( "Failed to start search workers!" );
+	}
+
+	bm_search_worker_deinit();
+    return(error);
+}
+
+char *
+findstring_bmsearch_multithread( char * pattern )
+{
+	return bmsearch_multithread2( pattern );
 }
 
 /* find the text in the source files */

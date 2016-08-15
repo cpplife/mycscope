@@ -429,7 +429,7 @@ search(void)
 	savesig = signal(SIGINT, jumpback);
 	if (sigsetjmp(env, 1) == 0) {
 		f = fields[field].findfcn;
-		if (f == findregexp || f == findstring || f == findstring_bmsearch) {
+		if (f == findregexp || f == findstring || (STRING == field ) ) {
 			findresult = (*f)(Pattern);
 		} else {
 			if ((nonglobalrefs = myfopen(temp2, "wb")) == NULL) {
