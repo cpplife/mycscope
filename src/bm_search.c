@@ -234,6 +234,11 @@ static int is_printable_char( uint8_t c )
 	return c >= 20 && c <= 126;
 }
 
+static int is_line_ending_char( char c )
+{
+	return c == '\n' || c == '\r';
+}
+
 int bm_search(char *file, FILE *output, char *format, char* pat)
 {
 	FILE* fptr;
@@ -381,9 +386,11 @@ static void
 bm_search_output_match( match_info_t* m, FILE* output, char* fmt, char* buffer, size_t buffer_len )
 {
 	int offset;
-	static const int BUF_LEN = 128;
+	static const int PREFIX_MAX_LEN = 64;
+	static const int POSTFIX_MAX_LEN = 64;
 	int rv;
 	const char* p;
+	int char_count;
 
 	pthread_mutex_lock( &bm_search_data.output_lock );
 
@@ -392,13 +399,17 @@ bm_search_output_match( match_info_t* m, FILE* output, char* fmt, char* buffer, 
 	offset = m->offset;
 	{
 		p = (char*)buffer + offset;
-		while ( *p != '\n' && p >= buffer ) {
+		char_count = PREFIX_MAX_LEN;
+		while ( !is_line_ending_char( *p ) && p >= buffer && char_count > 0) {
 			--p;
+			--char_count;
 		}
 		++p;
-		while ( *p != '\n' && (p - buffer ) < buffer_len ) {
+		char_count = PREFIX_MAX_LEN + POSTFIX_MAX_LEN;
+		while ( !is_line_ending_char( *p ) && (p - buffer ) < buffer_len && char_count > 0 ) {
 			if ( is_printable_char( *p ) ) {
 				putc( *p, output );
+				--char_count;
 			}
 			++p;
 		}
