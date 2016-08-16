@@ -37,11 +37,11 @@
 
 #include "global.h"
 
-CBOOL	mouse = NO;			/* mouse interface */
+BOOL	mouse = NO;			/* mouse interface */
 
 #ifdef UNIXPC	/* build command requires #ifdef instead of #if */
 #include <sys/window.h>
-CBOOL	unixpcmouse = NO;	/* running with a mouse on the Unix PC? */
+BOOL	unixpcmouse = NO;	/* running with a mouse on the Unix PC? */
 static int uw_hs, uw_vs;	/* character height and width */
 #endif
 
@@ -76,7 +76,7 @@ static	MENU	changemenu[] = {	/* change mode menu */
 };
 
 static	MENU	*loaded;		/* menu loaded */
-static	CBOOL	emacsviterm = NO;	/* terminal type */
+static	BOOL	emacsviterm = NO;	/* terminal type */
 
 static	void	loadmenu(MENU *menu);
 static	int	getcoordinate(void);

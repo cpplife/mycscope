@@ -407,11 +407,11 @@ jumpback(int sig)
 	siglongjmp(env, 1);
 }
 
-CBOOL
+BOOL
 search(void)
 {
 	char	*findresult = NULL;	/* find function output */
-	CBOOL	funcexist = YES;		/* find "function" error */
+	BOOL	funcexist = YES;		/* find "function" error */
 	FINDINIT rc = NOERROR;		/* findinit return code */
 	sighandler_t savesig;		/* old value of signal */
 	FP	f;			/* searching function */
@@ -744,7 +744,7 @@ pathcomponents(char *path, int components)
 
 /* open the references found file for writing */
 
-CBOOL
+BOOL
 writerefsfound(void)
 {
 	if (refsfound == NULL) {

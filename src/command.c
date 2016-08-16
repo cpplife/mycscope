@@ -53,9 +53,9 @@ static char const rcsid[] = "$Id: command.c,v 1.36 2012/05/20 13:58:53 broeker E
 int	selecting;
 unsigned int   curdispline = 0;
 
-CBOOL	caseless;		/* ignore letter case when searching */
-CBOOL	*change;		/* change this line */
-CBOOL	changing;		/* changing text */
+BOOL	caseless;		/* ignore letter case when searching */
+BOOL	*change;		/* change this line */
+BOOL	changing;		/* changing text */
 char	newpat[PATLEN + 1];	/* new pattern */
 /* HBB 20040430: renamed to avoid lots of clashes with function arguments
  * also named 'pattern' */
@@ -69,14 +69,14 @@ static	char	toprompt[] = "To: ";
 
 
 /* Internal prototypes: */
-static	CBOOL	changestring(void);
+static	BOOL	changestring(void);
 static	void	clearprompt(void);
 static	void	mark(unsigned int i);
 static	void	scrollbar(MOUSE *p);
 
 
 /* execute the command */
-CBOOL
+BOOL
 command(int commandc)
 {
     char filename[PATHLEN + 1];	/* file path name */
@@ -569,7 +569,7 @@ clearprompt(void)
 
 /* read references from a file */
 
-CBOOL
+BOOL
 readrefs(char *filename)
 {
 	FILE	*file;
@@ -603,7 +603,7 @@ readrefs(char *filename)
 
 /* change one text string to another */
 
-static CBOOL
+static BOOL
 changestring(void)
 {
     char    newfile[PATHLEN + 1];   /* new file name */
@@ -611,7 +611,7 @@ changestring(void)
     char    linenum[NUMLEN + 1];    /* file line number */
     char    msg[MSGLEN + 1];        /* message */
     FILE    *script;                /* shell script file */
-    CBOOL    anymarked = NO;         /* any line marked */
+    BOOL    anymarked = NO;         /* any line marked */
     MOUSE *p;                       /* mouse data */
     int     c;
     unsigned int i;
@@ -623,7 +623,7 @@ changestring(void)
 	return(NO);
     }
     /* create the line change indicators */
-    change = mycalloc(totallines, sizeof(CBOOL));
+    change = mycalloc(totallines, sizeof(BOOL));
     changing = YES;
     mousemenu();
 

@@ -64,7 +64,7 @@ static char const rcsid[] = "$Id: crossref.c,v 1.15 2009/08/28 14:28:27 nhorman 
 #define	SYMBOLINC	20	/* symbol list size increment */
 
 long	dboffset;		/* new database offset */
-CBOOL	errorsfound;		/* prompt before clearing messages */
+BOOL	errorsfound;		/* prompt before clearing messages */
 long	lineoffset;		/* source line database offset */
 long	npostings;		/* number of postings */
 int	nsrcoffset;             /* number of file name database offsets */
@@ -246,7 +246,7 @@ putcrossref(void)
 {
     unsigned int i, j;
     unsigned char c;
-    CBOOL    blank;          /* blank indicator */
+    BOOL    blank;          /* blank indicator */
     unsigned int symput = 0;     /* symbols output */
     int     type;
 
