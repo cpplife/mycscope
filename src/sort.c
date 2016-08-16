@@ -230,9 +230,9 @@ static char decimal_point;
 static int thousands_sep;
 
 /* Nonzero if the corresponding locales are hard.  */
-static BOOL hard_LC_COLLATE;
+static CBOOL hard_LC_COLLATE;
 #if HAVE_NL_LANGINFO
-static BOOL hard_LC_TIME;
+static CBOOL hard_LC_TIME;
 #endif
 
 #define NONZERO(x) ((x) != 0)
@@ -265,7 +265,7 @@ struct buffer
   size_t alloc;			/* Number of bytes allocated. */
   size_t left;			/* Number of bytes left from previous reads. */
   size_t line_bytes;		/* Number of bytes to reserve for each line. */
-  BOOL eof;			/* An EOF has been read.  */
+  CBOOL eof;			/* An EOF has been read.  */
 };
 
 struct keyfield
@@ -274,17 +274,17 @@ struct keyfield
   size_t schar;			/* Additional characters to skip. */
   size_t eword;			/* Zero-origin first word after field. */
   size_t echar;			/* Additional characters in field. */
-  BOOL const *ignore;		/* Boolean array of characters to ignore. */
+  CBOOL const *ignore;		/* Boolean array of characters to ignore. */
   char const *translate;	/* Translation applied to characters. */
-  BOOL skipsblanks;		/* Skip leading blanks when finding start.  */
-  BOOL skipeblanks;		/* Skip leading blanks when finding end.  */
-  BOOL numeric;			/* Flag for numeric comparison.  Handle
+  CBOOL skipsblanks;		/* Skip leading blanks when finding start.  */
+  CBOOL skipeblanks;		/* Skip leading blanks when finding end.  */
+  CBOOL numeric;			/* Flag for numeric comparison.  Handle
 				   strings of digits with optional decimal
 				   point, but no exponential notation. */
-  BOOL general_numeric;		/* Flag for general, numeric comparison.
+  CBOOL general_numeric;		/* Flag for general, numeric comparison.
 				   Handle numbers in exponential notation. */
-  BOOL month;			/* Flag for comparison by month name. */
-  BOOL reverse;			/* Reverse the sense of comparison. */
+  CBOOL month;			/* Flag for comparison by month name. */
+  CBOOL reverse;			/* Reverse the sense of comparison. */
   struct keyfield *next;	/* Next keyfield to try. */
 };
 
@@ -304,13 +304,13 @@ char *program_name;
    tricky.  */
 
 /* Table of blanks.  */
-static BOOL blanks[UCHAR_LIM];
+static CBOOL blanks[UCHAR_LIM];
 
 /* Table of non-printing characters. */
-static BOOL nonprinting[UCHAR_LIM];
+static CBOOL nonprinting[UCHAR_LIM];
 
 /* Table of non-dictionary characters (not letters, digits, or blanks). */
-static BOOL nondictionary[UCHAR_LIM];
+static CBOOL nondictionary[UCHAR_LIM];
 
 /* Translation table folding lower case to upper.  */
 static char fold_toupper[UCHAR_LIM];
@@ -369,12 +369,12 @@ static size_t temp_dir_count;
 static size_t temp_dir_alloc;
 
 /* Flag to reverse the order of all comparisons. */
-static BOOL reverse;
+static CBOOL reverse;
 
 /* Flag for stable sort.  This turns off the last ditch bytewise
    comparison of lines, and instead leaves lines in the same order
    they were read if all keys compare equal.  */
-static BOOL stable;
+static CBOOL stable;
 
 /* If TAB has this value, blanks separate fields.  */
 enum { TAB_DEFAULT = CHAR_MAX + 1 };
@@ -386,10 +386,10 @@ static int tab = TAB_DEFAULT;
 
 /* Flag to remove consecutive duplicate lines from the output.
    Only the last of a sequence of equal lines will be output. */
-static BOOL unique;
+static CBOOL unique;
 
 /* Nonzero if any of the input files are the standard input. */
-static BOOL have_read_stdin;
+static CBOOL have_read_stdin;
 
 /* List of key field comparisons to be tried.  */
 static struct keyfield *keylist;
@@ -1100,7 +1100,7 @@ limfield (const struct line_t *line, const struct keyfield *key)
    table too.  FILE is the name of the file corresponding to FP.
    Return YES if some input was read.  */
 
-static BOOL
+static CBOOL
 fillbuf (struct buffer *buf, register FILE *fp, char const *file)
 {
   struct keyfield const *key = keylist;
@@ -1504,7 +1504,7 @@ keycompare (const struct line_t *a, const struct line_t *b)
   for (;;)
     {
       register char const *translate = key->translate;
-      register BOOL const *ignore = key->ignore;
+      register CBOOL const *ignore = key->ignore;
 
       /* Find the lengths. */
       size_t lena = lima <= texta ? 0 : lima - texta;
@@ -1698,7 +1698,7 @@ compare (register const struct line_t *a, register const struct line_t *b)
    NO if they are not in order.  Otherwise, print no diagnostic
    and return YES.  */
 
-static BOOL
+static CBOOL
 check (char const *file_name)
 {
   FILE *fp = xfopen (file_name, "r");
@@ -1707,8 +1707,8 @@ check (char const *file_name)
   size_t alloc = 0;
   uintmax_t line_number = 0;
   struct keyfield const *key = keylist;
-  BOOL nonunique = ! unique;
-  BOOL ordered = YES;
+  CBOOL nonunique = ! unique;
+  CBOOL ordered = YES;
 
   initbuf (&buf, sizeof (struct line_t),
 	   MAX (merge_buffer_size, sort_size));
@@ -2043,7 +2043,7 @@ sortlines_temp (struct line_t *lines, size_t nlines, struct line_t *temp)
 {
   if (nlines == 2)
     {
-      BOOL swap = (0 < compare (&lines[-1], &lines[-2]));
+      CBOOL swap = (0 < compare (&lines[-1], &lines[-2]));
       temp[-1] = lines[-1 - swap];
       temp[-2] = lines[-2 + swap];
     }
@@ -2085,13 +2085,13 @@ avoid_trashing_input (char **files, size_t ntemps, size_t nfiles,
 		      char const *outfile)
 {
   size_t i;
-  BOOL got_outstat = NO;
+  CBOOL got_outstat = NO;
   struct stat outstat;
 
   for (i = ntemps; i < nfiles; i++)
     {
-      BOOL standard_input = STREQ (files[i], "-");
-      BOOL same;
+      CBOOL standard_input = STREQ (files[i], "-");
+      CBOOL same;
       struct stat instat;
 
       if (outfile && STREQ (outfile, files[i]) && ! standard_input)
@@ -2198,7 +2198,7 @@ sort (char * const *files, size_t nfiles, char const *output_file)
 {
 	struct buffer buf;
 	size_t ntemps = 0;
-	BOOL output_file_created = NO;
+	CBOOL output_file_created = NO;
 
 	if (temp_dir_count == 0)
 	{
@@ -2444,11 +2444,11 @@ gnu_main (int argc, char **argv)
   struct keyfield gkey;
   char const *s;
   int c = 0;
-  BOOL checkonly = NO;
-  BOOL mergeonly = NO;
+  CBOOL checkonly = NO;
+  CBOOL mergeonly = NO;
   size_t nfiles = 0;
-  BOOL posixly_correct = (getenv ("POSIXLY_CORRECT") != NULL);
-  BOOL obsolete_usage = (posix2_version () < 200112);
+  CBOOL posixly_correct = (getenv ("POSIXLY_CORRECT") != NULL);
+  CBOOL obsolete_usage = (posix2_version () < 200112);
   char const *short_options = (obsolete_usage
 			       ? COMMON_SHORT_OPTIONS "y::"
 			       : COMMON_SHORT_OPTIONS "y:");

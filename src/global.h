@@ -195,7 +195,7 @@ int rpl_asprintf(char **, const char *, ...);
 typedef	enum	{		/* boolean data type */
 	NO,
 	YES
-} BOOL;
+} CBOOL;
 
 typedef	enum	{		/* findinit return code */
 	NOERROR,
@@ -237,40 +237,40 @@ extern	char	dicode2[];	/* digraph second character code */
 /* main.c global data */
 extern	char	*editor, *home, *shell, *lineflag;	/* environment variables */
 extern	char	*home;		/* Home directory */
-extern 	BOOL	lineflagafterfile;
+extern 	CBOOL	lineflagafterfile;
 extern	char	*argv0;		/* command name */
-extern	BOOL	compress;	/* compress the characters in the crossref */
-extern	BOOL	dbtruncated;	/* database symbols truncated to 8 chars */
+extern	CBOOL	compress;	/* compress the characters in the crossref */
+extern	CBOOL	dbtruncated;	/* database symbols truncated to 8 chars */
 extern	int	dispcomponents;	/* file path components to display */
 #if CCS
-extern	BOOL	displayversion;	/* display the C Compilation System version */
+extern	CBOOL	displayversion;	/* display the C Compilation System version */
 #endif
-extern	BOOL	editallprompt;	/* prompt between editing files */
+extern	CBOOL	editallprompt;	/* prompt between editing files */
 extern	unsigned int fileargc;	/* file argument count */
 extern	char	**fileargv;	/* file argument values */
 extern	int	fileversion;	/* cross-reference file version */
-extern	BOOL	incurses;	/* in curses */
-extern	BOOL	invertedindex;	/* the database has an inverted index */
-extern	BOOL	isuptodate;	/* consider the crossref up-to-date */
-extern	BOOL	kernelmode;	/* don't use DFLT_INCDIR - bad for kernels */
-extern	BOOL	linemode;	/* use line oriented user interface */
-extern	BOOL	verbosemode;	/* print extra information on line mode */
-extern	BOOL	recurse_dir;	/* recurse dirs when searching for src files */
+extern	CBOOL	incurses;	/* in curses */
+extern	CBOOL	invertedindex;	/* the database has an inverted index */
+extern	CBOOL	isuptodate;	/* consider the crossref up-to-date */
+extern	CBOOL	kernelmode;	/* don't use DFLT_INCDIR - bad for kernels */
+extern	CBOOL	linemode;	/* use line oriented user interface */
+extern	CBOOL	verbosemode;	/* print extra information on line mode */
+extern	CBOOL	recurse_dir;	/* recurse dirs when searching for src files */
 extern	char	*namefile;	/* file of file names */
-extern	BOOL	ogs;		/* display OGS book and subsystem names */
+extern	CBOOL	ogs;		/* display OGS book and subsystem names */
 extern	char	*prependpath;	/* prepend path to file names */
 extern	FILE	*refsfound;	/* references found file */
 extern	char	temp1[];	/* temporary file name */
 extern	char	temp2[];	/* temporary file name */
 extern	long	totalterms;	/* total inverted index terms */
-extern	BOOL	trun_syms;	/* truncate symbols to 8 characters */
+extern	CBOOL	trun_syms;	/* truncate symbols to 8 characters */
 extern	char	tempstring[TEMPSTRING_LEN + 1]; /* global dummy string buffer */
 extern	char	*tmpdir;	/* temporary directory */
 
 /* command.c global data */
-extern	BOOL	caseless;	/* ignore letter case when searching */
-extern	BOOL	*change;	/* change this line */
-extern	BOOL	changing;	/* changing text */
+extern	CBOOL	caseless;	/* ignore letter case when searching */
+extern	CBOOL	*change;	/* change this line */
+extern	CBOOL	changing;	/* changing text */
 extern	int	selecting;
 extern	unsigned int curdispline;
 extern	char	newpat[];	/* new pattern */
@@ -278,7 +278,7 @@ extern	char	Pattern[];	/* symbol or text pattern */
 
 /* crossref.c global data */
 extern	long	dboffset;	/* new database offset */
-extern	BOOL	errorsfound;	/* prompt before clearing error messages */
+extern	CBOOL	errorsfound;	/* prompt before clearing error messages */
 extern	long	lineoffset;	/* source line database offset */
 extern	long	npostings;	/* number of postings */
 extern	unsigned long symbols;	/* number of symbols */
@@ -327,10 +327,10 @@ extern	struct	keystruct {
 } keyword[];
 
 /* mouse.c global data */
-extern	BOOL	mouse;		/* mouse interface */
+extern	CBOOL	mouse;		/* mouse interface */
 
 #if UNIXPC
-extern	BOOL	unixpcmouse;		/* UNIX PC mouse interface */
+extern	CBOOL	unixpcmouse;		/* UNIX PC mouse interface */
 #endif
 
 /* cscope functions called from more than one function or between files */ 
@@ -409,11 +409,11 @@ void	myungetch(int c);
 void	warning(char *text);
 void	writestring(char *s);
 
-BOOL	command(int commandc);
-BOOL	infilelist(char *file);
-BOOL	readrefs(char *filename);
-BOOL	search(void);
-BOOL	writerefsfound(void);
+CBOOL	command(int commandc);
+CBOOL	infilelist(char *file);
+CBOOL	readrefs(char *filename);
+CBOOL	search(void);
+CBOOL	writerefsfound(void);
 
 FINDINIT findinit(char *pattern);
 MOUSE	*getmouseaction(char leading_char);
@@ -422,7 +422,7 @@ struct	cmd *prevcmd(void);
 struct	cmd *nextcmd(void);
 
 int	egrep(char *file, FILE *output, char *format);
-int	mygetline(char p[], char s[], unsigned size, int firstchar, BOOL iscaseless);
+int	mygetline(char p[], char s[], unsigned size, int firstchar, CBOOL iscaseless);
 int	mygetch(void);
 int	hash(char *ss);
 int	execute(char *a, ...);

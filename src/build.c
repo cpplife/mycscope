@@ -57,9 +57,9 @@
 
 /* Exported variables: */
 
-BOOL	buildonly = NO;		/* only build the database */
-BOOL	unconditional = NO;	/* unconditionally build database */
-BOOL	fileschanged;		/* assume some files changed */
+CBOOL	buildonly = NO;		/* only build the database */
+CBOOL	unconditional = NO;	/* unconditionally build database */
+CBOOL	fileschanged;		/* assume some files changed */
 
 /* variable copies of the master strings... */
 char	invname_buf[] = INVNAME;
@@ -93,7 +93,7 @@ static	void	movefile(char *new, char *old);
 static	void	putheader(char *dir);
 static	void	fetch_include_from_dbase(char *, size_t);
 static	void	putlist(char **names, int count);
-static	BOOL	samelist(FILE *oldrefs, char **names, int count);
+static	CBOOL	samelist(FILE *oldrefs, char **names, int count);
 
 
 /* Error handling routine if inverted index creation fails */
@@ -113,7 +113,7 @@ cscope: removed files %s and %s\n",
 
 
 /* see if the name list is the same in the cross-reference file */
-static BOOL
+static CBOOL
 samelist(FILE *oldrefs, char **names, int count)
 {
     char    oldname[PATHLEN + 1];   /* name in old cross-reference */
@@ -218,7 +218,7 @@ build(void)
     int     built = 0;		/* built crossref for these files */
     int     copied = 0;		/* copied crossref for these files */
     unsigned long fileindex;		/* source file name index */
-    BOOL    interactive = YES;	/* output progress messages */
+    CBOOL    interactive = YES;	/* output progress messages */
 
     /* normalize the current directory relative to the home directory so
        the cross-reference is not rebuilt when the user's login is moved */
@@ -242,9 +242,9 @@ build(void)
 	fstat(fileno(oldrefs), &statstruct);
 	reftime = statstruct.st_mtime;
 	if (fileversion >= 8) {
-	    BOOL	oldcompress = YES;
-	    BOOL	oldinvertedindex = NO;
-	    BOOL	oldtruncate = NO;
+	    CBOOL	oldcompress = YES;
+	    CBOOL	oldinvertedindex = NO;
+	    CBOOL	oldtruncate = NO;
 	    int	c;
 
 	    /* see if there are options in the database */

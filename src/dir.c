@@ -73,11 +73,11 @@ static	struct	listitem {	/* source file names without view pathing */
 } *srcnames[HASHMOD];
 
 /* Internal prototypes: */
-static	BOOL	accessible_file(char *file);
-static	BOOL	issrcfile(char *file);
+static	CBOOL	accessible_file(char *file);
+static	CBOOL	issrcfile(char *file);
 static	void	addsrcdir(char *dir);
 static	void	addincdir(char *name, char *path);
-static	void	scan_dir(const char *dirfile, BOOL recurse);
+static	void	scan_dir(const char *dirfile, CBOOL recurse);
 static	void	makevpsrcdirs(void);
 
 
@@ -265,7 +265,7 @@ freeinclist()
 void
 makefilelist(void)
 {
-    static  BOOL    firstbuild = YES;       /* first time through */
+    static  CBOOL    firstbuild = YES;       /* first time through */
     FILE    *names;                 /* name file pointer */
     char    dir[PATHLEN + 1];
     char    path[PATHLEN + 1];
@@ -323,7 +323,7 @@ makefilelist(void)
 	char *point_in_line = line + (strlen(line) - 1);
 	size_t length_of_name = 0;
 	int unfinished_option = 0;
-	BOOL done = NO;
+	CBOOL done = NO;
 
 	/* Kill away \n left at end of fgets()'d string: */
 	if (*point_in_line == '\n')
@@ -478,7 +478,7 @@ cscope: Syntax error in namelist file %s: unfinished -I or -p option\n",
 
 /* scan a directory (recursively?) for source files */
 static void
-scan_dir(const char *adir, BOOL recurse_dir)
+scan_dir(const char *adir, CBOOL recurse_dir)
 {
 	DIR	*dirfile;
 	int adir_len = strlen(adir);
@@ -519,13 +519,13 @@ scan_dir(const char *adir, BOOL recurse_dir)
 
 
 /* see if this is a source file */
-static BOOL
+static CBOOL
 issrcfile(char *path)
 {
 	struct	stat	statstruct;
 	char	*file = mybasename(path);
 	char	*s = strrchr(file, '.');
-	BOOL looks_like_source = NO;
+	CBOOL looks_like_source = NO;
 
 	/* ensure there is some file suffix */
 	if (s == NULL || *++s == '\0')
@@ -627,7 +627,7 @@ incfile(char *file, char *type)
 
 
 /* see if the file is already in the list */
-BOOL
+CBOOL
 infilelist(char *path)
 {
     struct listitem *p;
@@ -645,7 +645,7 @@ infilelist(char *path)
 
 /* check if a file is readable enough to be allowed in the
  * database */
-static BOOL
+static CBOOL
 accessible_file(char *file)
 {
     if (access(compath(file), READ) == 0) {

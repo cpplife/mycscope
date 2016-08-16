@@ -71,17 +71,17 @@ static	long	lastfcnoffset;		/* last function name offset */
 static	POSTING	*postingp;		/* retrieved posting set pointer */
 static	long	postingsfound;		/* retrieved number of postings */
 static	regex_t regexp;			/* regular expression */
-static	BOOL	isregexp_valid = NO;	/* regular expression status */
+static	CBOOL	isregexp_valid = NO;	/* regular expression status */
 
-static	BOOL	match(void);
-static	BOOL	matchrest(void);
+static	CBOOL	match(void);
+static	CBOOL	matchrest(void);
 static	POSTING	*getposting(void);
 static	char	*lcasify(char *s);
-static	void	findcalledbysub(char *file, BOOL macro);
+static	void	findcalledbysub(char *file, CBOOL macro);
 static	void	findterm(char *pattern);
 static	void	putline(FILE *output);
-static  char    *find_symbol_or_assignment(char *pattern, BOOL assign_flag);
-static  BOOL    check_for_assignment(void);
+static  char    *find_symbol_or_assignment(char *pattern, CBOOL assign_flag);
+static  CBOOL    check_for_assignment(void);
 static	void	putpostingref(POSTING *p, char *pat);
 static	void	putref(int seemore, char *file, char *func);
 static	void	putsource(int seemore, FILE *output);
@@ -103,7 +103,7 @@ findassign(char *pattern)
 
 /* Test reference whether it's an assignment to the symbol found at
  * (global variable) 'blockp' */
-static BOOL
+static CBOOL
 check_for_assignment(void) 
 {
     /* Do the extra work here to determine if this is an
@@ -162,7 +162,7 @@ check_for_assignment(void)
 /* The actual routine that does the work for findsymbol() and
 * findassign() */
 static char *
-find_symbol_or_assignment(char *pattern, BOOL assign_flag)
+find_symbol_or_assignment(char *pattern, CBOOL assign_flag)
 {
 	char	file[PATHLEN + 1];	/* source file name */
 	char	function[PATLEN + 1];	/* function name */
@@ -172,7 +172,7 @@ find_symbol_or_assignment(char *pattern, BOOL assign_flag)
 	char	*s;
 	size_t	s_len = 0;
 	char firstchar;		/* first character of a potential symbol */
-	BOOL fcndef = NO;
+	CBOOL fcndef = NO;
 
 	if ((invertedindex == YES) && (assign_flag == NO)) {
 		long	lastline = 0;
@@ -744,7 +744,7 @@ FINDINIT
 findinit(char *pattern)
 {
 	char	buf[PATLEN + 3];
-	BOOL	isregexp = NO;
+	CBOOL	isregexp = NO;
 	int	i;
 	char	*s;
 	unsigned char c;	/* HBB 20010427: changed uint to uchar */
@@ -861,7 +861,7 @@ findcleanup(void)
 
 /* match the pattern to the string */
 
-static BOOL
+static CBOOL
 match(void)
 {
 	char	string[PATLEN + 1];
@@ -880,12 +880,12 @@ match(void)
 		}
 	}
 	/* it is a string pattern */
-	return((BOOL) (*blockp == cpattern[0] && matchrest()));
+	return((CBOOL) (*blockp == cpattern[0] && matchrest()));
 }
 
 /* match the rest of the pattern to the name */
 
-static BOOL
+static CBOOL
 matchrest(void)
 {
 	int	i = 1;
@@ -928,7 +928,7 @@ putsource(int seemore, FILE *output)
 {
 	char *tmpblockp;
 	char	*cp, nextc = '\0';
-	BOOL Change = NO, retreat = NO;
+	CBOOL Change = NO, retreat = NO;
 	
 	if (fileversion <= 5) {
 		(void) scanpast(' ');
@@ -1116,7 +1116,7 @@ findcalledby(char *pattern)
 {
 	char	file[PATHLEN + 1];	/* source file name */
 	static char found_caller = 'n'; /* seen calling function? */
-	BOOL	macro = NO;
+	CBOOL	macro = NO;
 
 	if (invertedindex == YES) {
 		POSTING	*p;
@@ -1324,7 +1324,7 @@ dbseek(long offset)
 }
 
 static void
-findcalledbysub(char *file, BOOL macro)
+findcalledbysub(char *file, CBOOL macro)
 {
 	/* find the next function call or the end of this function */
 	while (scanpast('\t') != NULL) {

@@ -47,9 +47,9 @@
 
 /* declarations for globals defined in build.c */
 
-extern	BOOL	buildonly;	/* only build the database */
-extern	BOOL	unconditional;	/* unconditionally build database */
-extern	BOOL	fileschanged;	/* assume some files changed */
+extern	CBOOL	buildonly;	/* only build the database */
+extern	CBOOL	unconditional;	/* unconditionally build database */
+extern	CBOOL	fileschanged;	/* assume some files changed */
 
 extern	char	*reffile;	/* cross-reference file path name */
 extern	char	*invname; 	/* inverted index to the database */

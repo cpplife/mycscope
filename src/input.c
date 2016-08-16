@@ -109,7 +109,7 @@ mygetch(void)
 
 /* get a line from the terminal in non-canonical mode */
 int
-mygetline(char p[], char s[], unsigned size, int firstchar, BOOL iscaseless)
+mygetline(char p[], char s[], unsigned size, int firstchar, CBOOL iscaseless)
 {
     int	c;
     unsigned int i = 0, j;

@@ -56,6 +56,9 @@
 #ifdef HAVE_GETOPT_LONG 
 #include <getopt.h>
 #endif
+#ifdef _WIN32
+#include <windows.h>
+#endif
 
 /* defaults for unset environment variables */
 #define	EDITOR	"vi"
@@ -79,34 +82,34 @@ char	dicode2[256];		/* digraph second character code */
 
 char	*editor, *shell, *lineflag;	/* environment variables */
 char	*home;			/* Home directory */
-BOOL	lineflagafterfile;
+CBOOL	lineflagafterfile;
 char	*argv0;			/* command name */
-BOOL	compress = YES;		/* compress the characters in the crossref */
-BOOL	dbtruncated;		/* database symbols are truncated to 8 chars */
+CBOOL	compress = YES;		/* compress the characters in the crossref */
+CBOOL	dbtruncated;		/* database symbols are truncated to 8 chars */
 int	dispcomponents = 1;	/* file path components to display */
 #if CCS
-BOOL	displayversion;		/* display the C Compilation System version */
+CBOOL	displayversion;		/* display the C Compilation System version */
 #endif
-BOOL	editallprompt = YES;	/* prompt between editing files */
+CBOOL	editallprompt = YES;	/* prompt between editing files */
 unsigned int fileargc;		/* file argument count */
 char	**fileargv;		/* file argument values */
 int	fileversion;		/* cross-reference file version */
-BOOL	incurses = NO;		/* in curses */
-BOOL	invertedindex;		/* the database has an inverted index */
-BOOL	isuptodate;		/* consider the crossref up-to-date */
-BOOL	kernelmode;		/* don't use DFLT_INCDIR - bad for kernels */
-BOOL	linemode = NO;		/* use line oriented user interface */
-BOOL	verbosemode = NO;	/* print extra information on line mode */
-BOOL	recurse_dir = NO;	/* recurse dirs when searching for src files */
+CBOOL	incurses = NO;		/* in curses */
+CBOOL	invertedindex;		/* the database has an inverted index */
+CBOOL	isuptodate;		/* consider the crossref up-to-date */
+CBOOL	kernelmode;		/* don't use DFLT_INCDIR - bad for kernels */
+CBOOL	linemode = NO;		/* use line oriented user interface */
+CBOOL	verbosemode = NO;	/* print extra information on line mode */
+CBOOL	recurse_dir = NO;	/* recurse dirs when searching for src files */
 char	*namefile;		/* file of file names */
-BOOL	ogs;			/* display OGS book and subsystem names */
+CBOOL	ogs;			/* display OGS book and subsystem names */
 char	*prependpath;		/* prepend path to file names */
 FILE	*refsfound;		/* references found file */
 char	temp1[PATHLEN + 1];	/* temporary file name */
 char	temp2[PATHLEN + 1];	/* temporary file name */
 char	tempdirpv[PATHLEN + 1];	/* private temp directory */
 long	totalterms;		/* total inverted index terms */
-BOOL	trun_syms;		/* truncate symbols to 8 characters */
+CBOOL	trun_syms;		/* truncate symbols to 8 characters */
 char	tempstring[TEMPSTRING_LEN + 1]; /* use this as a buffer, instead of 'yytext', 
 				 * which had better be left alone */
 char	*tmpdir;		/* temporary directory */
@@ -114,7 +117,7 @@ int		thread_worker_count = 8; /* Give the thread count */
 
 
 
-static	BOOL	onesearch;		/* one search only in line mode */
+static	CBOOL	onesearch;		/* one search only in line mode */
 static	char	*reflines;		/* symbol reference lines file */
 
 /* Internal prototypes: */
@@ -299,6 +302,16 @@ main(int argc, char **argv)
     struct sigaction winch_action;
 #endif
     mode_t orig_umask;
+
+#ifdef _WIN32
+    {
+        SYSTEM_INFO si;
+        GetSystemInfo(&si);
+        thread_worker_count = si.dwNumberOfProcessors;
+		printf( ">>> thread_worker_count: %d\n", thread_worker_count );
+    }
+#endif
+
 	
     yyin = stdin;
     yyout = stdout;
