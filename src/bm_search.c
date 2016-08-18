@@ -1,9 +1,11 @@
 #include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
+#include <pthread.h>
+
 #include "bm_search.h"
 #include "library.h"
-#include <pthread.h>
+#include "os_wrapper.h"
 
 #define ALPHABET_LEN 256
 #define NOT_FOUND patlen
@@ -400,7 +402,7 @@ bm_search_output_match( match_info_t* m, FILE* output, char* fmt, char* buffer, 
 	{
 		p = (char*)buffer + offset;
 		char_count = PREFIX_MAX_LEN;
-		while ( !is_line_ending_char( *p ) && p >= buffer && char_count > 0) {
+		while ( p >= buffer && !is_line_ending_char( *p ) && char_count > 0) {
 			--p;
 			--char_count;
 		}
@@ -483,6 +485,70 @@ bm_search_and_output_match(char *file, char* pat, int* delta1, int* delta2 )
 	}
 
 	fclose(fptr);
+	return;
+}
+
+static void 
+bm_search_and_output_match_with_mmap(char *file, char* pat, int* delta1, int* delta2 )
+{
+	mmap_info_t mmap_info;
+	size_t size;
+	uint8_t* buffer, *target;
+	int pat_len, buffer_offset;
+	match_info_t* match_list, *match_last, *m;
+
+	match_list = NULL; match_last = NULL;
+
+	if ( os_mmap( file, &mmap_info ) != 0 ) return;
+
+	size = (size_t)mmap_info.size;
+	buffer = (uint8_t*)mmap_info.buffer;
+
+	if ( buffer != NULL ) {
+		pat_len = (int)strlen( pat );
+		buffer_offset = 0;
+
+		bm_search_state_t state;
+		bm_search_set( &state, delta1, delta2, buffer, size, (uint8_t*)pat, pat_len ); 
+		target = boyer_moore( &state );
+		while ( target != NULL ) {
+
+			match_info_t* m = malloc( sizeof( match_info_t ) );
+			bm_search_set_match( m, file, state.line_number, target - buffer );
+			if ( match_list == NULL ) {
+				match_list = m;
+				match_last = m;
+			}
+			else {
+				match_last->next = m;
+				match_last = m;
+			}
+
+			buffer_offset = (target - buffer ) + pat_len;
+			target = NULL;
+			if ( buffer_offset < size ) {
+				state.text = buffer + buffer_offset;
+				state.text_len = size - buffer_offset;
+				target = boyer_moore( &state );
+			}
+		}
+
+		/* output the match result */
+		m = match_list;
+		while ( m != NULL ) {
+			bm_search_output_match( m, bm_search_data.output, bm_search_data.format, buffer, size );
+			m = m->next;
+		}
+	}
+	/* clear the match list */
+	m = match_list;
+	while ( m != NULL ) {
+		match_info_t* temp = m;
+		m = m->next;
+		free( temp );
+	}
+
+	os_munmap( &mmap_info );
 	return;
 }
 
@@ -743,7 +809,8 @@ static void* bm_search_and_output_from_global_worker( void* p )
 		}
 		pthread_mutex_unlock( &bm_search_data.global_worker_lock );
 
-		bm_search_and_output_match( f->filename, bm_search_data.pat, 
+		bm_search_and_output_match_with_mmap( 
+				f->filename, bm_search_data.pat, 
 				bm_search_data.delta1, bm_search_data.delta2 );
 
 		free( f );
