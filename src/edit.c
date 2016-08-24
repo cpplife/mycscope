@@ -130,6 +130,11 @@ char *
 filepath(char *file)
 {
 	static	char	path[PATHLEN + 1];
+
+#ifdef _WIN32
+	/* return for full path, no need to add prependpath. */
+	if ( file[1] == ':' ) return file;
+#endif
 	
 	if (prependpath != NULL && *file != '/') {
 		(void) snprintf(path, sizeof(path), "%s/%s", prependpath, file);
