@@ -1,7 +1,7 @@
 TODO:
-
-* Replace external sort with internal function.
-* support C++ better.
+* Support C++ better;
+* Support python, javascript?
+* Add parameters to set file types?
 
 
 
@@ -10,4 +10,5 @@ FINISHED:
 
 * Speedup updating of cscope db
     note: after using -q option when building cscope db, the search speed for me is enough...
+* Replace external sort with internal function.
  
