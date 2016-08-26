@@ -103,8 +103,9 @@ edit(char *file, char *linenum)
 	char	msg[MSGLEN + 1];	/* message */
 	char	plusnum[NUMLEN + 20];	/* line number option: allow space for wordy line# flag */
 	char	*s;
+	char    path[PATHLEN + 1];
 
-	file = filepath(file);
+	file = filepath(file, path, PATHLEN + 1);
 	(void) snprintf(msg, sizeof(msg), "%s +%s %s", mybasename(editor), linenum, file);
 	postmsg(msg);
 	(void) snprintf(plusnum, sizeof(plusnum), lineflag, linenum);
@@ -125,19 +126,17 @@ edit(char *file, char *linenum)
 }
 
 /* if requested, prepend a path to a relative file name */
-
+/* path should have length of PATHLEN + 1 */
 char *
-filepath(char *file)
+filepath(char *file, char* path/* in parameter*/, int path_len )
 {
-	static	char	path[PATHLEN + 1];
-
 #ifdef _WIN32
 	/* return for full path, no need to add prependpath. */
 	if ( file[1] == ':' ) return file;
 #endif
 	
 	if (prependpath != NULL && *file != '/') {
-		(void) snprintf(path, sizeof(path), "%s/%s", prependpath, file);
+		(void) snprintf(path, path_len, "%s/%s", prependpath, file);
 		file = path;
 	}
 	return(file);

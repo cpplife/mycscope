@@ -3,6 +3,8 @@
 #include <string.h>
 #include <pthread.h>
 
+#include "global.h"
+#include "constants.h"
 #include "bm_search.h"
 #include "library.h"
 #include "os_wrapper.h"
@@ -557,10 +559,13 @@ static void* bm_search_and_output_worker( void* p )
 	int i = *(int*)p;
 	file_info_t* f;
 	worker_info_t* w = &bm_search_data.workers[i];
+	char path[PATHLEN + 1];
+	char* filename;
+	filename = filepath( f->filename, path, PATHLEN + 1 );
 
 	f = w->file_list;
 	while ( f != NULL ) {
-		bm_search_and_output_match( f->filename, bm_search_data.pat, 
+		bm_search_and_output_match( filename, bm_search_data.pat, 
 				bm_search_data.delta1, bm_search_data.delta2 );
 		f = f->next;
 	}
@@ -790,6 +795,8 @@ static void* bm_search_and_output_from_global_worker( void* p )
 	int i = *(int*)p;
 	(void)i;
 	file_info_t* f;
+	char path[PATHLEN + 1];
+	char* filename;
 
 	while ( 1 ) {
 		pthread_mutex_lock( &bm_search_data.global_worker_lock );
@@ -809,8 +816,9 @@ static void* bm_search_and_output_from_global_worker( void* p )
 		}
 		pthread_mutex_unlock( &bm_search_data.global_worker_lock );
 
+		filename = filepath( f->filename, path, PATHLEN + 1 );
 		bm_search_and_output_match_with_mmap( 
-				f->filename, bm_search_data.pat, 
+				filename, bm_search_data.pat, 
 				bm_search_data.delta1, bm_search_data.delta2 );
 
 		free( f );

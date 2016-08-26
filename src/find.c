@@ -559,10 +559,11 @@ findstring_bmsearch( char * pattern )
 {
     unsigned int i;
     char *egreperror = "Invalid search!";
+	char path[PATHLEN + 1];
 
 	/* search the files */
 	for (i = 0; i < nsrcfiles; ++i) {
-	    char *file = filepath(srcfiles[i]);
+	    char *file = filepath(srcfiles[i], path, PATHLEN + 1);
 
 	    progress("Search", searchcount, nsrcfiles);
 	    if (bm_search(file, refsfound, "%s <unknown> %ld ", pattern) < 0) {
@@ -586,7 +587,7 @@ bmsearch_multithread( char * pattern )
 
 	/* add files into workers. */
 	for (i = 0; i < nsrcfiles; ++i) {
-		bm_search_worker_add( i, filepath(srcfiles[i]) );
+		bm_search_worker_add( i, srcfiles[i] );
 	}
 	/* run the threads to find the pattern */
 	if ( bm_search_and_output_worker_run() ) {
@@ -649,13 +650,14 @@ findregexp(char *egreppat)
 {
     unsigned int i;
     char *egreperror;
+	char path[PATHLEN + 1];
 
     /* compile the pattern */
     if ((egreperror = egrepinit(egreppat)) == NULL) {
 
 	/* search the files */
 	for (i = 0; i < nsrcfiles; ++i) {
-	    char *file = filepath(srcfiles[i]);
+	    char *file = filepath(srcfiles[i], path, PATHLEN + 1);
 
 	    progress("Search", searchcount, nsrcfiles);
 	    if (egrep(file, refsfound, "%s <unknown> %ld ") < 0) {

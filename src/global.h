@@ -335,7 +335,7 @@ extern	BOOL	unixpcmouse;		/* UNIX PC mouse interface */
 
 /* cscope functions called from more than one function or between files */ 
 
-char	*filepath(char *file);
+char	*filepath(char *file, char* path, int path_len );
 char	*findcalledby(char *pattern);
 char	*findcalling(char *pattern);
 char	*findallfcns(char *dummy);
