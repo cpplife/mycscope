@@ -817,7 +817,7 @@ static void* bm_search_and_output_from_global_worker( void* p )
 		pthread_mutex_unlock( &bm_search_data.global_worker_lock );
 
 		filename = filepath( f->filename, path, PATHLEN + 1 );
-		bm_search_and_output_match_with_mmap( 
+		bm_search_and_output_match( 
 				filename, bm_search_data.pat, 
 				bm_search_data.delta1, bm_search_data.delta2 );
 
