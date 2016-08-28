@@ -319,6 +319,9 @@ extern	long	blocknumber;	/* block number */
 extern	char	*blockp;	/* pointer to current character in block */
 extern	int	blocklen;	/* length of disk block read */
 
+extern  int  code_type_count; /* code type count */
+extern  char *code_types[MAX_CODE_TYPE]; /* saved code extension */
+
 /* lookup.c global data */
 extern	struct	keystruct {
 	char	*text;

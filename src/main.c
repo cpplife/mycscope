@@ -112,6 +112,8 @@ char	tempstring[TEMPSTRING_LEN + 1]; /* use this as a buffer, instead of 'yytext
 				 * which had better be left alone */
 char	*tmpdir;		/* temporary directory */
 int		thread_worker_count = 8; /* Give the thread count */
+char    *code_types[MAX_CODE_TYPE];
+int     code_type_count = 0;
 
 
 
@@ -157,7 +159,7 @@ char ** parse_options(int *argc, char **argv)
 	
 
 	while ((opt = getopt_long(argcc, argv,
-	       "hVbcCdeF:f:I:i:kLl0:1:2:3:4:5:6:7:8:9:P:p:qRs:TUuv",
+	       "hVbcCdeF:f:t:I:i:kLl0:1:2:3:4:5:6:7:8:9:P:p:qRs:TUuv",
 	       lopts, &longind)) != -1) {
 		switch(opt) {
 
@@ -256,6 +258,15 @@ char ** parse_options(int *argc, char **argv)
 
 		case 'F':	/* symbol reference lines file */
 			reflines = optarg;
+			break;
+		case 't':
+			if ( code_type_count < MAX_CODE_TYPE ) {
+				code_types[code_type_count] = optarg;
+				++code_type_count;
+			}
+			else {
+				postfatal("max code type reached, only %d allowed.\n", MAX_CODE_TYPE);
+			}
 			break;
 		case 'i':	/* file containing file names */
 			namefile = optarg;
@@ -401,6 +412,7 @@ cscope: pattern too long, cannot be > %d characters\n", PATLEN);
 	    case 'R':
 		recurse_dir = YES;
 		break;
+	    case 't':	/* extra code types */
 	    case 'f':	/* alternate cross-reference file */
 	    case 'F':	/* symbol reference lines file */
 	    case 'i':	/* file containing file names */
@@ -465,6 +477,15 @@ cscope: reffile too long, cannot be > %d characters\n", sizeof(path) - 3);
 		case 'S':
 		    sourcedir(s);
 		    break;
+		case 't':
+			if ( code_type_count < MAX_CODE_TYPE ) {
+				code_types[code_type_count] = s;
+				++code_type_count;
+			}
+			else {
+				postfatal("max code type reached, only %d allowed.\n", MAX_CODE_TYPE);
+			}
+			break;
 		}
 		goto nextarg;
 	    default:

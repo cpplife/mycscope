@@ -518,6 +518,21 @@ scan_dir(const char *adir, BOOL recurse_dir)
 }
 
 
+/* see if this file extension is added by command line.*/
+static BOOL
+is_code_file( char* ext )
+{
+	int i = 0; 
+	while ( i < code_type_count ) {
+		if ( strcmp( ext, code_types[i] ) == 0 ) {
+			return YES;
+		}
+		++i;
+	}
+	return NO;
+}
+
+
 /* see if this is a source file */
 static BOOL
 issrcfile(char *path)
@@ -571,6 +586,10 @@ issrcfile(char *path)
 		      || (s[0] == 'h' && s[1] == 'x' && s[2] == 'x' ))
 		  ) {
 		looks_like_source = YES;
+	}
+
+	if (looks_like_source != YES) {
+		looks_like_source = is_code_file( s );
 	}
 
 	if (looks_like_source != YES)

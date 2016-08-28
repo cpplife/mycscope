@@ -78,6 +78,8 @@
 
 #define	STMTMAX	10000		/* maximum source statement length */
 
+#define MAX_CODE_TYPE 250
+
 #define STR2(x) #x
 #define STRINGIZE(x) STR2(x)
 #define PATLEN_STR STRINGIZE(PATLEN)
