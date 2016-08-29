@@ -44,5 +44,8 @@ mybasename(char *path)
 	if ((s = strrchr(path, '/')) != 0) {
 		return(s + 1);
 	}
+	if ((s = strrchr(path, '\\')) != 0) {
+		return(s + 1);
+	}	
 	return(path);
 }
