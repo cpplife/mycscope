@@ -1108,9 +1108,9 @@ lcasify(char *s)
 }
 
 static char *
-basename_with_ext( char* s )
+basename_with_ext( char *s )
 {
-	const char* last = s;
+	char *last = s;
 
 	/* Goto zero end char. */
 	while ( *last )  {
@@ -1122,6 +1122,8 @@ basename_with_ext( char* s )
 		last--;
 		if ( *last == '\\' || *last == '/') break;
 	}
+
+	return last;
 }
 
 /* find the functions called by this function */
