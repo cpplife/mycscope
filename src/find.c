@@ -85,6 +85,7 @@ static  BOOL    check_for_assignment(void);
 static	void	putpostingref(POSTING *p, char *pat);
 static	void	putref(int seemore, char *file, char *func);
 static	void	putsource(int seemore, FILE *output);
+static	char	*basename_with_ext(char *s);
 
 /* find the symbol in the cross-reference */
 
@@ -673,25 +674,25 @@ findregexp(char *egreppat)
 char *
 findfile(char *dummy)
 {
-    unsigned int i;
-	
-    (void) dummy;		/* unused argument */
+	unsigned int i;
 
-    for (i = 0; i < nsrcfiles; ++i) {
-	char *s;
+	(void) dummy;		/* unused argument */
 
-	if (caseless == YES) {
-	    s = lcasify(srcfiles[i]);
-	} else {
-	    s = srcfiles[i];
+	for (i = 0; i < nsrcfiles; ++i) {
+		char *s;
+
+		if (caseless == YES) {
+			s = lcasify(srcfiles[i]);
+		} else {
+			s = srcfiles[i];
+		}
+		s = basename_with_ext( s );
+		if (regexec (&regexp, s, (size_t)0, NULL, 0) == 0) {
+			(void) fprintf(refsfound, "%s <unknown> 1 <unknown>\n", srcfiles[i]);
+		}
 	}
-	if (regexec (&regexp, s, (size_t)0, NULL, 0) == 0) {
-	    (void) fprintf(refsfound, "%s <unknown> 1 <unknown>\n", 
-			   srcfiles[i]);
-	}
-    }
 
-    return NULL;
+	return NULL;
 }
 
 /* find files #including this file */
@@ -1104,6 +1105,23 @@ lcasify(char *s)
 	}
 	*lptr = '\0';
 	return(ls);
+}
+
+static char *
+basename_with_ext( char* s )
+{
+	const char* last = s;
+
+	/* Goto zero end char. */
+	while ( *last )  {
+		last++;
+	}
+
+	/* Go back to last dir slash. */
+	while ( last != s ) {
+		last--;
+		if ( *last == '\\' || *last == '/') break;
+	}
 }
 
 /* find the functions called by this function */
