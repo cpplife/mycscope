@@ -286,7 +286,7 @@ makefilelist(void)
 		if ((s = inviewpath(file)) != NULL) {
 		    addsrcfile(s);
 		} else {
-		    fprintf(stderr, "cscope: cannot find file %s\n",
+		    fprintf(stderr, "cscope: cannot find file 0 %s\n",
 			    file);
 		    errorsfound = YES;
 		}
@@ -438,7 +438,7 @@ cscope: Syntax error in namelist file %s: unfinished -I or -p option\n",
 		    if ((s = inviewpath(newpath)) != NULL) {
 			addsrcfile(s);
 		    } else {
-			fprintf(stderr, "cscope: cannot find file %s\n",
+			fprintf(stderr, "cscope: cannot find file 1 %s\n",
 				newpath);
 			errorsfound = YES;
 		    }
@@ -454,7 +454,7 @@ cscope: Syntax error in namelist file %s: unfinished -I or -p option\n",
 		    if ((s = inviewpath(path)) != NULL) {
 			addsrcfile(s);
 		    } else {
-			fprintf(stderr, "cscope: cannot find file %s\n",
+			fprintf(stderr, "cscope: cannot find file 2 %s\n",
 				path);
 			errorsfound = YES;
 		    }

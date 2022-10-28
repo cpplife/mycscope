@@ -484,6 +484,14 @@ class({wsnl}+{identifier}){wsnl}*;	{	/* class declaration*/
 			BEGIN(INITIAL);
 			goto more;
 		}
+namespace{wsnl}+{identifier}({wsnl}|{identifier}|[():])*\{	{	/* namespace definition */
+			classdef = YES;
+			tagdef =  CLASSDEF;
+			yyless(9);		/* eat up 'namespace', and re-scan */
+			yy_set_bol(0);
+			goto more;
+			/* NOTREACHED */
+		}
 class{wsnl}+{identifier}({wsnl}|{identifier}|[():])*\{	{	/* class definition */
 			classdef = YES;
 			tagdef =  CLASSDEF;
@@ -579,7 +587,7 @@ if{wsnl}*\(	{ 	/* ignore 'if' */
 		}
 
 <WAS_IDENTIFIER>{       
-{ws}*\(({wsnl}|{identifier}|{number}|[*&[\]=,.:])*\)([()]|{wsnl})*[:a-zA-Z_#{]	{
+{ws}*\(({wsnl}|{identifier}|{number}|[*&[\]=,.:+-])*\)([()]|{wsnl})*[:a-zA-Z_#{]	{
 			/* a function definition */
 			/* note: "#define a (b) {" and "#if defined(a)\n#" 
 			 * are not fcn definitions! */
@@ -737,6 +745,8 @@ if{wsnl}*\(	{ 	/* ignore 'if' */
 				           arraydimension == NO) {
 					/* if a typedef name */
 					token = TYPEDEF;
+					/* TCC: end typedef token */
+					typedefbraces = -1;
 				} else {
 					oldtype = NO;
 				}

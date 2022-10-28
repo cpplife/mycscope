@@ -43,7 +43,7 @@
 #if defined(USE_NCURSES) && !defined(RENAMED_NCURSES)
 #include <ncurses.h>
 #else
-#include <curses.h>
+ #include <curses.h>
 #endif
 #include <ctype.h>
 

@@ -66,8 +66,8 @@
 #define	DUMMYCHAR	' '	/* use space as a dummy character */
 #define	MSGLEN	((PATLEN) + 80)	/* displayed message length */
 #define	NUMLEN	10		/* line number length */
-#define	PATHLEN	500		/* file pathname length */
-#define	PATLEN	500		/* symbol pattern length */
+#define	PATHLEN	1000		/* file pathname length */
+#define	PATLEN	1000		/* symbol pattern length */
 #define TEMPSTRING_LEN 8191     /* max strlen() of the global temp string */
 #define	REFFILE	"cscope.out"	/* cross-reference output file */
 #define	NAMEFILE "cscope.files"	/* default list-of-files file */

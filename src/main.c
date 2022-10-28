@@ -99,6 +99,7 @@ BOOL	kernelmode;		/* don't use DFLT_INCDIR - bad for kernels */
 BOOL	linemode = NO;		/* use line oriented user interface */
 BOOL	verbosemode = NO;	/* print extra information on line mode */
 BOOL	recurse_dir = NO;	/* recurse dirs when searching for src files */
+BOOL	dump_symbols = NO;	/* log out the symbols */
 char	*namefile;		/* file of file names */
 BOOL	ogs;			/* display OGS book and subsystem names */
 char	*prependpath;		/* prepend path to file names */
@@ -159,7 +160,7 @@ char ** parse_options(int *argc, char **argv)
 	
 
 	while ((opt = getopt_long(argcc, argv,
-	       "hVbcCdeF:f:t:I:i:kLl0:1:2:3:4:5:6:7:8:9:P:p:qRs:TUuv",
+	       "hVbcCdDeF:f:t:I:i:kLl0:1:2:3:4:5:6:7:8:9:P:p:qRs:TUuv",
 	       lopts, &longind)) != -1) {
 		switch(opt) {
 
@@ -199,6 +200,9 @@ char ** parse_options(int *argc, char **argv)
 			break;
 		case 'd':	/* consider crossref up-to-date */
 			isuptodate = YES;
+			break;
+		case 'D':
+			dump_symbols = YES;
 			break;
 		case 'e':	/* suppress ^E prompt between files */
 			editallprompt = NO;
@@ -378,6 +382,9 @@ cscope: pattern too long, cannot be > %d characters\n", PATLEN);
 		break;
 	    case 'd':	/* consider crossref up-to-date */
 		isuptodate = YES;
+		break;
+	    case 'D':
+		dump_symbols = YES;
 		break;
 	    case 'e':	/* suppress ^E prompt between files */
 		editallprompt = NO;

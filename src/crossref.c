@@ -47,6 +47,7 @@
 
 static char const rcsid[] = "$Id: crossref.c,v 1.15 2009/08/28 14:28:27 nhorman Exp $";
 
+extern BOOL dump_symbols;	/* print out symbols */
 
 /* convert long to a string */
 #define	ltobase(value)	n = value; \
@@ -197,14 +198,16 @@ crossref(char *srcfile)
 static void
 savesymbol(int token, int num)
 {
-#if 0 /* TCC: set to 1 to print the deubug symbol */
-	int i;
-	char buf[128];
-	for ( i = 0; i < last - first; ++i ) {
-		buf[i] = *(my_yytext + first + i);
+#if 1 /* TCC: set to 1 to print the deubug symbol */
+	if (dump_symbols) {
+		int i;
+		char buf[128];
+		for ( i = 0; i < last - first; ++i ) {
+			buf[i] = *(my_yytext + first + i);
+		}
+		buf[last - first] = '\0';
+		printf( "token: %c(%d), text: %s\n", (char)token, token, buf );
 	}
-	buf[last - first] = '\0';
-	printf( "token: %c(%d), text: %s\n", (char)token, token, buf );
 #endif
     /* make sure there is room for the symbol */
     if (symbols == msymbols) {
